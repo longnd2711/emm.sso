@@ -1,7 +1,3 @@
-Chào bạn, với tư cách là Kiến trúc sư Phần mềm, tôi đã tổng hợp và viết lại bản **Đặc tả Hệ thống Toàn diện**. Bản đặc tả này hợp nhất tất cả các yêu cầu về Nhân sự, Chấm công, Quản lý Tài sản (CMDB) và Tra cứu Sản phẩm/Bảo hành vào một tài liệu duy nhất, chuẩn hóa theo kiến trúc Supabase.
-
----
-
 # 📋 ĐẶC TẢ HỆ THỐNG: UNIFIED HR, ASSET & WARRANTY MANAGEMENT SYSTEM
 
 ## 1. 🚀 TỔNG QUAN DỰ ÁN
