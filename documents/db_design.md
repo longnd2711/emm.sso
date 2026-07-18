@@ -1,53 +1,20 @@
-# 🏗️ THIẾT KẾ CƠ SỞ DỮ LIỆU TỔNG THỂ (MASTER DATABASE DESIGN)
-
-## 1. NGUYÊN TẮC THIẾT KẾ CỐT LÕI
-*   **Surrogate Key:** Sử dụng `UUID` (v4) làm Khóa chính (PK) cho tất cả các bảng để đảm bảo tính duy nhất và bảo mật.
-*   **Single Source of Truth:** Bảng `profiles` là nguồn dữ liệu duy nhất cho mọi đối tượng người dùng (Nhân viên, Quản lý, Kỹ thuật viên).
-*   **Flexibility (JSONB):** Sử dụng kiểu dữ liệu `JSONB` cho các thông số kỹ thuật và thông tin mua sắm để hệ thống có thể mở rộng mà không cần thay đổi cấu trúc bảng.
-*   **Performance First:** Đánh chỉ mục (Index) cho tất cả Khóa ngoại (FK) và các trường tìm kiếm thường xuyên.
-*   **Automation:** Sử dụng Database Triggers để xử lý logic nghiệp vụ ngay tại tầng dữ liệu (tính ngày bảo hành, cập nhật trạng thái tài sản).
-
----
-
-## 2. CẤU TRÚC CÁC PHÂN HỆ (MODULES)
-
-### 2.1. Phân hệ Tổ chức & Nhân sự (Core HR)
-*   **`departments`**: Lưu sơ đồ tổ chức. Hỗ trợ phân cấp cha-con (parent-child).
-*   **`profiles`**: Mở rộng từ `auth.users`. Lưu mã nhân viên, chức danh, quyền hạn (`role`) và trạng thái làm việc.
-
-### 2.2. Phân hệ Chấm công & Đơn từ (Attendance & Requests)
-*   **`shifts`**: Định nghĩa các ca làm việc.
-*   **`attendances`**: Lưu dữ liệu check-in/out kèm tọa độ GPS, ảnh selfie và độ chính xác vị trí.
-*   **`requests`**: Quản lý các loại đơn từ (nghỉ phép, OT, sửa công) và luồng phê duyệt.
-
-### 2.3. Phân hệ Quản lý Tài sản - CMDB (Asset Management)
-*   **`asset_groups` & `device_types`**: Phân loại tài sản theo nhóm và loại thiết bị.
-*   **`suppliers`**: Danh mục nhà cung cấp tài sản/phần mềm.
-*   **`assets`**: Kho tài sản chi tiết. Lưu thông số kỹ thuật linh hoạt qua JSONB.
-*   **`asset_handover_logs`**: Nhật ký bàn giao/thu hồi tài sản kèm bằng chứng hình ảnh.
-*   **`software_licenses`**: Quản lý bản quyền phần mềm gắn với thiết bị.
-
-### 2.4. Phân hệ Sản phẩm & Bảo hành (Product & Warranty)
-*   **`product_types`**: Danh mục các dòng sản phẩm kinh doanh.
-*   **`motors`**: Danh sách máy vật lý (Serial Number).
-*   **`customers`**: Thông tin khách hàng, đại lý, đối tác.
-*   **`registrations`**: Hồ sơ kích hoạt bảo hành và chuyển quyền sở hữu sản phẩm.
-*   **`maintenance_logs`**: Lịch sử bảo trì, sửa chữa sản phẩm.
-
-### 2.5. Phân hệ Giám sát & Nhật ký (Monitoring & Logs)
-*   **`scan_logs`**: Ghi lại vết quét QR Code (GPS, thiết bị).
-*   **`audit_logs`**: Nhật ký thay đổi dữ liệu (Audit Trail) để phục vụ bảo mật và truy vết.
-
----
-
-## 3. SQL MASTER SCRIPT (KHỞI TẠO TOÀN BỘ HỆ THỐNG)
-
-```sql
 -- ==============================================================================
 -- 1. KHỞI TẠO EXTENSIONS VÀ KIỂU DỮ LIỆU (ENUMS)
 -- ==============================================================================
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+-- Xóa các Type cũ nếu tồn tại để đảm bảo tính nhất quán
+DROP TYPE IF EXISTS public.user_status CASCADE;
+DROP TYPE IF EXISTS public.group_role CASCADE;
+DROP TYPE IF EXISTS public.asset_status CASCADE;
+DROP TYPE IF EXISTS public.handover_type CASCADE;
+DROP TYPE IF EXISTS public.motor_status CASCADE;
+DROP TYPE IF EXISTS public.customer_type CASCADE;
+DROP TYPE IF EXISTS public.registration_status CASCADE;
+DROP TYPE IF EXISTS public.request_type CASCADE;
+DROP TYPE IF EXISTS public.request_status CASCADE;
+
+-- Khởi tạo các ENUM
 CREATE TYPE public.user_status AS ENUM ('working', 'resigned');
 CREATE TYPE public.group_role AS ENUM ('employee', 'manager', 'hr_admin', 'admin', 'staff', 'technician');
 CREATE TYPE public.asset_status AS ENUM ('in_stock', 'in_use', 'maintenance', 'broken', 'retired');
@@ -72,16 +39,17 @@ CREATE TABLE public.departments (
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
-CREATE INDEX idx_departments_parent_id ON public.departments(parent_id);
 
--- Hồ sơ người dùng (Hợp nhất)
+-- Hồ sơ người dùng (Hợp nhất Nhân sự & Tài khoản)
 CREATE TABLE public.profiles (
     id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     employee_code VARCHAR(50) UNIQUE NOT NULL,
     full_name VARCHAR(255) NOT NULL,
     phone_number VARCHAR(20),
     company_email VARCHAR(100) UNIQUE,
+    personal_email VARCHAR(100),
     department_id UUID REFERENCES public.departments(id),
+    title VARCHAR(100),
     manager_id UUID REFERENCES public.profiles(id),
     role public.group_role NOT NULL DEFAULT 'employee',
     status public.user_status DEFAULT 'working',
@@ -89,13 +57,11 @@ CREATE TABLE public.profiles (
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
-CREATE INDEX idx_profiles_department_id ON public.profiles(department_id);
-CREATE INDEX idx_profiles_manager_id ON public.profiles(manager_id);
 
--- Cập nhật khóa ngoại manager_id cho bảng departments
+-- Cập nhật ràng buộc cho bảng departments
 ALTER TABLE public.departments ADD CONSTRAINT fk_dept_manager FOREIGN KEY (manager_id) REFERENCES public.profiles(id);
 
--- Khách hàng
+-- Khách hàng & Đại lý
 CREATE TABLE public.customers (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     customer_type public.customer_type NOT NULL DEFAULT 'retail',
@@ -103,12 +69,14 @@ CREATE TABLE public.customers (
     phone VARCHAR(20) NOT NULL UNIQUE,
     email VARCHAR(255),
     address TEXT,
+    company_name VARCHAR(255),
+    tax_code VARCHAR(50),
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- ==============================================================================
--- 3. PHÂN HỆ CHẤM CÔNG & ĐƠN TỪ
+-- 3. PHÂN HỆ CHẤM CÔNG & ĐƠN TỪ (ATTENDANCE)
 -- ==============================================================================
 
 CREATE TABLE public.attendances (
@@ -125,8 +93,6 @@ CREATE TABLE public.attendances (
     is_offline_sync BOOLEAN DEFAULT FALSE,
     status VARCHAR(50) -- on_time, late, early_leave, missing
 );
-CREATE INDEX idx_attendances_user_id ON public.attendances(user_id);
-CREATE INDEX idx_attendances_date ON public.attendances(date);
 
 CREATE TABLE public.requests (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -139,17 +105,16 @@ CREATE TABLE public.requests (
     status public.request_status DEFAULT 'pending',
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
-CREATE INDEX idx_requests_user_id ON public.requests(user_id);
-CREATE INDEX idx_requests_reviewer_id ON public.requests(reviewer_id);
 
 -- ==============================================================================
--- 4. PHÂN HỆ QUẢN LÝ TÀI SẢN (CMDB)
+-- 4. PHÂN HỆ QUẢN LÝ TÀI SẢN - CMDB (ASSETS)
 -- ==============================================================================
 
 CREATE TABLE public.asset_groups (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     group_code VARCHAR(20) UNIQUE NOT NULL,
-    name VARCHAR(100) NOT NULL
+    name VARCHAR(100) NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE
 );
 
 CREATE TABLE public.device_types (
@@ -159,7 +124,6 @@ CREATE TABLE public.device_types (
     name VARCHAR(100) NOT NULL,
     specs_schema JSONB DEFAULT '{}'
 );
-CREATE INDEX idx_device_types_group_id ON public.device_types(group_id);
 
 CREATE TABLE public.assets (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -169,10 +133,9 @@ CREATE TABLE public.assets (
     status public.asset_status DEFAULT 'in_stock',
     purchase_info JSONB DEFAULT '{}',
     specifications JSONB DEFAULT '{}',
+    usage_location VARCHAR(255),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
-CREATE INDEX idx_assets_device_type_id ON public.assets(device_type_id);
-CREATE INDEX idx_assets_current_user_id ON public.assets(current_user_id);
 
 CREATE TABLE public.asset_handover_logs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -183,11 +146,9 @@ CREATE TABLE public.asset_handover_logs (
     condition_notes TEXT,
     action_date TIMESTAMPTZ DEFAULT NOW()
 );
-CREATE INDEX idx_asset_handover_logs_asset_id ON public.asset_handover_logs(asset_id);
-CREATE INDEX idx_asset_handover_logs_user_id ON public.asset_handover_logs(user_id);
 
 -- ==============================================================================
--- 5. PHÂN HỆ SẢN PHẨM & BẢO HÀNH
+-- 5. PHÂN HỆ SẢN PHẨM & BẢO HÀNH (WARRANTY)
 -- ==============================================================================
 
 CREATE TABLE public.product_types (
@@ -195,7 +156,8 @@ CREATE TABLE public.product_types (
     model_code VARCHAR(50) NOT NULL UNIQUE,
     name VARCHAR(255) NOT NULL,
     warranty_months INT NOT NULL DEFAULT 12,
-    specifications JSONB DEFAULT '{}'
+    specifications JSONB DEFAULT '{}',
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE TABLE public.motors (
@@ -207,7 +169,6 @@ CREATE TABLE public.motors (
     warranty_expiry_date DATE,
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
-CREATE INDEX idx_motors_product_type_id ON public.motors(product_type_id);
 
 CREATE TABLE public.registrations (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -216,14 +177,23 @@ CREATE TABLE public.registrations (
     status public.registration_status NOT NULL DEFAULT 'pending',
     is_active BOOLEAN NOT NULL DEFAULT false,
     verified_by UUID REFERENCES public.profiles(id),
-    created_at TIMESTAMPTZ DEFAULT NOW()
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
-CREATE INDEX idx_registrations_motor_id ON public.registrations(motor_id);
-CREATE INDEX idx_registrations_customer_id ON public.registrations(customer_id);
 CREATE UNIQUE INDEX unique_active_registration ON public.registrations(motor_id) WHERE is_active = true;
 
+CREATE TABLE public.maintenance_logs (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    motor_id UUID NOT NULL REFERENCES public.motors(id) ON DELETE CASCADE,
+    service_type VARCHAR(100) NOT NULL,
+    service_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    technician_name VARCHAR(255),
+    description TEXT,
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- ==============================================================================
--- 6. LOGS & GIÁM SÁT
+-- 6. LOGS & GIÁM SÁT (MONITORING)
 -- ==============================================================================
 
 CREATE TABLE public.scan_logs (
@@ -233,7 +203,6 @@ CREATE TABLE public.scan_logs (
     latitude NUMERIC(10, 8), longitude NUMERIC(11, 8),
     device_info TEXT
 );
-CREATE INDEX idx_scan_logs_motor_id ON public.scan_logs(motor_id);
 
 CREATE TABLE public.audit_logs (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -245,11 +214,37 @@ CREATE TABLE public.audit_logs (
     new_values JSONB,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
-CREATE INDEX idx_audit_logs_user_id ON public.audit_logs(user_id);
-CREATE INDEX idx_audit_logs_created_at ON public.audit_logs(created_at);
 
 -- ==============================================================================
--- 7. TRIGGERS & LOGIC TỰ ĐỘNG
+-- 7. TỐI ƯU HÓA CHỈ MỤC (INDEXES FOR PERFORMANCE)
+-- ==============================================================================
+
+-- Core & HR
+CREATE INDEX idx_profiles_dept ON public.profiles(department_id);
+CREATE INDEX idx_profiles_mgr ON public.profiles(manager_id);
+CREATE INDEX idx_dept_parent ON public.departments(parent_id);
+
+-- Attendance & Requests
+CREATE INDEX idx_att_user_date ON public.attendances(user_id, date);
+CREATE INDEX idx_req_user ON public.requests(user_id);
+
+-- Assets
+CREATE INDEX idx_assets_type ON public.assets(device_type_id);
+CREATE INDEX idx_assets_user ON public.assets(current_user_id);
+CREATE INDEX idx_handover_asset ON public.asset_handover_logs(asset_id);
+CREATE INDEX idx_handover_user ON public.asset_handover_logs(user_id);
+
+-- Warranty
+CREATE INDEX idx_motors_type ON public.motors(product_type_id);
+CREATE INDEX idx_reg_motor ON public.registrations(motor_id);
+CREATE INDEX idx_reg_customer ON public.registrations(customer_id);
+CREATE INDEX idx_scan_motor ON public.scan_logs(motor_id);
+
+-- Audit
+CREATE INDEX idx_audit_time ON public.audit_logs(created_at);
+
+-- ==============================================================================
+-- 8. HÀM VÀ TRIGGERS TỰ ĐỘNG (AUTOMATION)
 -- ==============================================================================
 
 -- Hàm cập nhật updated_at
@@ -258,6 +253,7 @@ RETURNS TRIGGER AS $$ BEGIN NEW.updated_at = NOW(); RETURN NEW; END; $$ LANGUAGE
 
 CREATE TRIGGER trg_upd_profiles BEFORE UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 CREATE TRIGGER trg_upd_assets BEFORE UPDATE ON public.assets FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+CREATE TRIGGER trg_upd_motors BEFORE UPDATE ON public.motors FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 
 -- Tự động tính ngày hết hạn bảo hành
 CREATE OR REPLACE FUNCTION public.calculate_warranty_expiry()
@@ -271,7 +267,6 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
 CREATE TRIGGER trg_calc_warranty BEFORE INSERT OR UPDATE ON public.motors FOR EACH ROW EXECUTE FUNCTION public.calculate_warranty_expiry();
 
 -- Tự động cập nhật trạng thái tài sản khi bàn giao
@@ -286,35 +281,36 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
 CREATE TRIGGER trg_handover_status AFTER INSERT ON public.asset_handover_logs FOR EACH ROW EXECUTE FUNCTION public.update_asset_status_on_handover();
-```
 
----
+-- ==============================================================================
+-- 9. BẢO MẬT CẤP DÒNG (ROW LEVEL SECURITY - RLS)
+-- ==============================================================================
 
-## 4. BẢO MẬT & PHÂN QUYỀN (RLS POLICIES)
-
-Hệ thống sử dụng hàm `get_current_user_role()` để kiểm tra quyền hạn của người dùng đang đăng nhập.
-
-```sql
--- Bật RLS
+-- Bật RLS cho các bảng quan trọng
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.assets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.attendances ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.assets ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.registrations ENABLE ROW LEVEL SECURITY;
 
--- Hàm lấy Role
+-- Hàm hỗ trợ lấy Role
 CREATE OR REPLACE FUNCTION public.get_current_user_role()
 RETURNS text AS $$ SELECT role::text FROM public.profiles WHERE id = auth.uid(); $$ LANGUAGE sql SECURITY DEFINER;
 
--- Ví dụ Policy cho Assets
-CREATE POLICY "Users view own assets" ON public.assets FOR SELECT USING (auth.uid() = current_user_id);
-CREATE POLICY "Admins manage all assets" ON public.assets FOR ALL USING (public.get_current_user_role() IN ('admin', 'hr_admin'));
-```
+-- Policies cho Profiles
+CREATE POLICY "Profiles viewable by authenticated" ON public.profiles FOR SELECT USING (auth.uid() IS NOT NULL);
+CREATE POLICY "Admins manage profiles" ON public.profiles FOR ALL USING (public.get_current_user_role() IN ('admin', 'hr_admin'));
 
----
+-- Policies cho Attendances
+CREATE POLICY "Users view own attendance" ON public.attendances FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "HR view all attendance" ON public.attendances FOR SELECT USING (public.get_current_user_role() IN ('admin', 'hr_admin'));
 
-## 5. TỔNG KẾT ƯU ĐIỂM
-1.  **Hiệu năng cao:** Nhờ hệ thống Index được thiết kế sẵn cho tất cả các Khóa ngoại.
-2.  **Toàn vẹn dữ liệu:** Các ràng buộc `REFERENCES` và `ON DELETE CASCADE/RESTRICT` đảm bảo không có dữ liệu mồ côi.
-3.  **Tự động hóa:** Giảm thiểu sai sót của con người thông qua Triggers (tự động đổi trạng thái máy, tự tính ngày bảo hành).
-4.  **Khả năng mở rộng:** Cấu trúc JSONB cho phép bạn thêm bất kỳ thông số kỹ thuật nào cho Laptop, Máy in hay Động cơ mà không cần chạy lệnh `ALTER TABLE`.
+-- Policies cho Assets
+CREATE POLICY "Users view assigned assets" ON public.assets FOR SELECT USING (auth.uid() = current_user_id);
+CREATE POLICY "HR manage assets" ON public.assets FOR ALL USING (public.get_current_user_role() IN ('admin', 'hr_admin'));
+
+-- Policies cho Registrations (Bảo hành)
+CREATE POLICY "Public view active registrations" ON public.registrations FOR SELECT USING (is_active = true);
+CREATE POLICY "Staff manage registrations" ON public.registrations FOR ALL USING (public.get_current_user_role() IN ('admin', 'staff'));
+
+-- HOÀN TẤT
