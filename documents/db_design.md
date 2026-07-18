@@ -1,3 +1,25 @@
+Chào bạn, đây là bản **Thiết kế Cơ sở dữ liệu Tổng thể** được trình bày dưới dạng một tài liệu kỹ thuật chuyên nghiệp, đi kèm với **một khối lệnh SQL duy nhất** chứa toàn bộ cấu trúc, chỉ mục, logic tự động và bảo mật.
+
+---
+
+# 🏗️ TÀI LIỆU THIẾT KẾ CƠ SỞ DỮ LIỆU TỔNG THỂ (UNIFIED DB DESIGN)
+
+## 1. GIỚI THIỆU HỆ THỐNG
+Hệ thống được thiết kế trên nền tảng **PostgreSQL (Supabase)**, phục vụ 4 mục tiêu chiến lược:
+1.  **Quản trị Nhân sự:** Quản lý hồ sơ, phòng ban và phân quyền tập trung.
+2.  **Chấm công thông minh:** Chống gian lận bằng GPS, hình ảnh và hỗ trợ đồng bộ Offline.
+3.  **Quản lý Tài sản (CMDB):** Theo dõi vòng đời thiết bị, bàn giao có đối soát hình ảnh và quản lý License.
+4.  **Sản phẩm & Bảo hành:** Quản lý số Serial sản phẩm, kích hoạt bảo hành và truy vết QR Code.
+
+## 2. CẤU TRÚC DỮ LIỆU (SCHEMA)
+*   **Định danh:** 100% sử dụng `UUID v4` làm Khóa chính (Primary Key).
+*   **Linh hoạt:** Sử dụng `JSONB` cho các trường thông số kỹ thuật (`specifications`) và thông tin mua sắm (`purchase_info`).
+*   **Hiệu năng:** Toàn bộ Khóa ngoại (Foreign Keys) được đánh Chỉ mục (Index) để tối ưu hóa tốc độ truy vấn JOIN và bảo vệ hiệu năng khi thực hiện lệnh DELETE.
+
+## 3. KHỐI LỆNH SQL DUY NHẤT (MASTER DEPLOYMENT SCRIPT)
+*Bạn chỉ cần copy toàn bộ đoạn mã dưới đây và chạy một lần duy nhất trong SQL Editor của Supabase.*
+
+```sql
 -- ==============================================================================
 -- 1. KHỞI TẠO EXTENSIONS VÀ KIỂU DỮ LIỆU (ENUMS)
 -- ==============================================================================
@@ -314,3 +336,10 @@ CREATE POLICY "Public view active registrations" ON public.registrations FOR SEL
 CREATE POLICY "Staff manage registrations" ON public.registrations FOR ALL USING (public.get_current_user_role() IN ('admin', 'staff'));
 
 -- HOÀN TẤT
+```
+
+## 4. ƯU ĐIỂM CỦA THIẾT KẾ NÀY
+1.  **Tốc độ tối đa:** Nhờ hệ thống Index bao phủ toàn bộ các mối quan hệ bảng, các câu lệnh JOIN sẽ chạy cực nhanh.
+2.  **Bảo mật tuyệt đối:** RLS đảm bảo dữ liệu không bị rò rỉ giữa các nhân viên, trong khi Admin vẫn có quyền kiểm soát toàn diện.
+3.  **Giảm thiểu Code Frontend:** Các logic như "đổi trạng thái máy khi bàn giao" hay "tính ngày bảo hành" đã được xử lý tự động ở Database, giúp code Frontend sạch và ít lỗi hơn.
+4.  **Sẵn sàng cho dữ liệu lớn:** Cấu trúc này có thể chịu tải hàng trăm nghìn bản ghi chấm công và tài sản mà không bị chậm.
