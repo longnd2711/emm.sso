@@ -1,6 +1,3 @@
-Chào bạn, đây là bản **Thiết kế Cơ sở dữ liệu Tổng thể** được trình bày dưới dạng một tài liệu kỹ thuật chuyên nghiệp, đi kèm với **một khối lệnh SQL duy nhất** chứa toàn bộ cấu trúc, chỉ mục, logic tự động và bảo mật.
-
----
 
 # 🏗️ TÀI LIỆU THIẾT KẾ CƠ SỞ DỮ LIỆU TỔNG THỂ (UNIFIED DB DESIGN)
 
