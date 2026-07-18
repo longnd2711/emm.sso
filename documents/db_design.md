@@ -1,4 +1,4 @@
-# THIẾT KẾ CƠ SỞ DỮ LIỆU TỔNG THỂ (MASTER DATABASE DESIGN)
+# 🏗️ THIẾT KẾ CƠ SỞ DỮ LIỆU TỔNG THỂ (MASTER DATABASE DESIGN)
 
 ## 1. NGUYÊN TẮC THIẾT KẾ CỐT LÕI
 *   **Surrogate Key:** Sử dụng `UUID` (v4) làm Khóa chính (PK) cho tất cả các bảng để đảm bảo tính duy nhất và bảo mật.
