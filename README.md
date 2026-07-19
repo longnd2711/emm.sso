@@ -1,103 +1,68 @@
-# 📅 KẾ HOẠCH TRIỂN KHAI CHI TIẾT (REVISED)
 
-## GIAI ĐOẠN 1: THIẾT LẬP NỀN TẢNG & CẦU NỐI GOOGLE DRIVE
-**Mục tiêu:** Chuẩn bị DB và giải pháp lưu trữ file không tốn phí.
 
-1.  **Triển khai Database:** Chạy bản Master SQL Script trên Supabase.
-2.  **Thiết lập Google Drive API (Cầu nối lưu trữ):**
-    *   Vì Supabase không trực tiếp lưu file vào Drive, chúng ta sẽ sử dụng **Google Apps Script (GAS)** làm trung gian (miễn phí).
-    *   **Bước làm:** Tạo một script GAS nhận file (base64) từ Web App -> Lưu vào thư mục Drive chỉ định -> Trả về URL/ID file cho Supabase.
-3.  **Khởi tạo dự án Frontend:** Tạo project Vite (React/TypeScript) và cài đặt các thư viện UI.
+# 🌐 HEMEMM System - Trung tâm Điều hướng & Xác thực Tập trung (SSO)
 
----
+## 1. 🚀 Tổng quan Hệ thống
+Hệ thống quản trị HEMEMM là một hệ sinh thái các ứng dụng Web chuyên biệt, được thiết kế theo kiến trúc **Multi-Repository** và **Single Backend**. 
 
-## GIAI ĐOẠN 2: PHÂN HỆ TRA CỨU SẢN PHẨM & BẢO HÀNH (ƯU TIÊN 1)
-**Mục tiêu:** Hoàn thiện tính năng tra cứu QR Code/Serial cho khách hàng.
+Mục tiêu của Repository này (`emm.sso`) là đóng vai trò **Cổng đăng nhập tập trung (Single Sign-On - SSO)**, cho phép nhân viên đăng nhập một lần và truy cập liền mạch vào tất cả các phân hệ khác trong hệ thống của Công ty HEM.
 
-1.  **Trang Tra cứu Công khai (Public Route):**
-    *   Xây dựng giao diện tìm kiếm theo `Serial Number`.
-    *   Kết nối bảng `motors` và `product_types` để hiển thị: Tên máy, Ngày sản xuất, Trạng thái bảo hành.
-2.  **Trang Kích hoạt Bảo hành:**
-    *   Form cho khách hàng nhập thông tin (Tên, SĐT, Ảnh hóa đơn).
-    *   **Xử lý ảnh:** Gửi ảnh hóa đơn qua GAS để lưu vào Google Drive, lấy link lưu vào bảng `registrations`.
-3.  **Giao diện Quản lý cho Staff (Internal):**
-    *   Trang duyệt yêu cầu bảo hành (`pending` -> `approved`).
-    *   Khi duyệt, Trigger tự động kích hoạt `is_active = true` cho sản phẩm.
+## 2. 🗺️ Bản đồ Sub-domain & Phân hệ
+Hệ thống được chia nhỏ thành các Repository độc lập để tối ưu hóa việc bảo trì và nâng cấp:
 
----
+| Sub-domain | Repository | Trạng thái | Chức năng chính |
+| :--- | :--- | :--- | :--- |
+| **ungdung.hem.com.vn** | `emm.sso` | **Trung tâm** | Xác thực tập trung, Dashboard điều hướng ứng dụng. |
+| **tracuu.hem.com.vn** | `emm.tracuu` | Đang phát triển | Tra cứu sản phẩm, thông tin công cộng (Không cần login). |
+| **lichhop.hem.com.vn** | `emm.lichhop` | Đã vận hành | Đăng ký và quản lý lịch họp nội bộ. |
+| **taisan.hem.com.vn** | `emm.taisan` | Kế hoạch | Quản lý tài sản (CMDB), bàn giao thiết bị, đối soát ảnh. |
+| **sanxuat.hem.com.vn** | `emm.sanxuat` | Kế hoạch | Hệ thống điều hành sản xuất (MES), kho vận, tiến độ. |
 
-## GIAI ĐOẠN 3: XÁC THỰC & QUẢN TRỊ NHÂN SỰ (CORE HR)
-**Mục tiêu:** Thiết lập hệ thống đăng nhập và hồ sơ nhân viên.
+## 3. 🛠️ Stack Công nghệ (No-Build Architecture)
+Hệ thống ưu tiên sự đơn giản trong triển khai và sửa đổi trực tiếp trên GitHub:
+*   **Hosting:** GitHub Pages.
+*   **Backend & Database:** Supabase (PostgreSQL).
+*   **Frontend Thư viện (CDN):**
+    *   `Vue.js (Global)` hoặc `React (UMD)`: Xử lý logic giao diện.
+    *   `Tailwind CSS (Play CDN)`: Thiết kế giao diện nhanh.
+    *   `Supabase-js (ESM)`: Kết nối Database & Auth.
+    *   `Lucide Icons`: Hệ thống biểu tượng.
 
-1.  **Tích hợp Supabase Auth:** Đăng nhập bằng Email/Password công ty.
-2.  **Quản lý Profile:** Trang cập nhật thông tin nhân viên, ảnh đại diện (lưu Drive).
-3.  **Phân quyền (RBAC):** Kiểm tra `role` từ bảng `profiles` để mở khóa các menu: Quản lý Tài sản, Chấm công, Quản lý Bảo hành.
+## 4. 🔑 Cơ chế Đăng nhập Tập trung (SSO Flow)
+Để vượt qua rào cản chia sẻ Session giữa các Sub-domain trên GitHub Pages, hệ thống sử dụng cơ chế **URL Fragment Token Passing**:
 
----
+1.  **Kiểm tra:** Khi người dùng vào một app con (ví dụ: `taisan.hem.com.vn`) mà chưa có Session, app sẽ redirect về:
+    `ungdung.hem.com.vn/login.html?redirect=taisan.hem.com.vn`
+2.  **Xác thực:** Người dùng đăng nhập tại `ungdung.hem.com.vn`.
+3.  **Điều hướng:** Sau khi thành công, SSO redirect ngược lại app con kèm Token:
+    `taisan.hem.com.vn/#access_token=...&refresh_token=...`
+4.  **Thiết lập:** App con đọc Token từ URL, nạp vào Supabase Client bằng hàm `setSession()` và lưu vào LocalStorage của domain đó.
 
-## GIAI ĐOẠN 4: QUẢN LÝ TÀI SẢN (ASSETS & CMDB)
-**Mục tiêu:** Quản lý thiết bị nội bộ và bàn giao.
+## 5. 🗄️ Cấu trúc Cơ sở dữ liệu (Database Schema)
+Toàn bộ các ứng dụng dùng chung **01 Project Supabase**. Bảng dữ liệu quan trọng nhất là `public.profiles`:
 
-1.  **Kho tài sản:** Giao diện CRUD danh mục thiết bị.
-2.  **Module Bàn giao/Thu hồi:**
-    *   Chụp ảnh hiện trạng máy khi giao/nhận.
-    *   Ảnh được đẩy lên Google Drive thông qua cầu nối GAS.
-    *   Lưu link ảnh vào bảng `asset_handover_logs`.
-3.  **Tài sản cá nhân:** Nhân viên xem danh sách máy mình đang cầm và tình trạng bảo hành của máy đó.
+*   **`profiles`**: Hợp nhất thông tin nhân sự.
+    *   `id`: UUID (FK từ auth.users).
+    *   `employee_code`: Mã nhân viên HEM.
+    *   `role`: Phân quyền (`admin`, `manager`, `staff`, `technician`).
+    *   `department_id`: Liên kết phòng ban.
+*   **Các bảng nghiệp vụ khác:** `attendances`, `assets`, `meetings`, `production_orders`... được phân quyền qua RLS dựa trên `auth.uid()`.
 
----
+## 6. 🛡️ Quy định Bảo mật & RLS
+*   **Row Level Security (RLS):** Bắt buộc bật trên tất cả các bảng.
+*   **Chính sách:**
+    *   Nhân viên chỉ thấy dữ liệu liên quan đến mình.
+    *   Quản lý thấy dữ liệu của phòng ban.
+    *   Admin có quyền điều hành toàn hệ thống.
+*   **Storage:** Các ảnh chụp chấm công, ảnh tài sản được lưu tại Buckets riêng tư, chỉ truy cập qua URL có thời hạn (Signed URLs).
 
-## GIAI ĐOẠN 5: CHẤM CÔNG CHỐNG GIAN LẬN (ATTENDANCE)
-**Mục tiêu:** Hệ thống ghi nhận công dựa trên vị trí và hình ảnh.
-
-1.  **UI Chấm công:** Lấy tọa độ GPS và chụp ảnh selfie.
-2.  **Edge Function:** Gọi hàm trung gian để:
-    *   Xác thực vị trí (không cho phép fake GPS).
-    *   Đẩy ảnh selfie lên Google Drive.
-    *   Ghi giờ thực tế vào bảng `attendances`.
-
----
-
-## GIAI ĐOẠN 6: PWA, OFFLINE & TRIỂN KHAI (DEPLOY)
-**Mục tiêu:** Hoàn thiện trải nghiệm người dùng và đưa lên GitHub Pages.
-
-1.  **Offline Sync:** Cài đặt `Dexie.js` để lưu tạm dữ liệu tra cứu hoặc chấm công khi mất mạng.
-2.  **GitHub Actions:** Thiết lập CI/CD để tự động build và deploy lên GitHub Pages mỗi khi push code.
-
----
-
-# 🛠️ GIẢI PHÁP LƯU FILE LÊN GOOGLE DRIVE (MIỄN PHÍ)
-
-Vì bạn muốn lưu lên Drive, đây là đoạn mã **Google Apps Script** bạn cần triển khai để làm API:
-
-```javascript
-// Triển khai dưới dạng Web App trong Google Apps Script
-function doPost(e) {
-  var data = JSON.parse(e.postData.contents);
-  var folder = DriveApp.getFolderById("ID_THU_MUC_CUA_BAN");
-  
-  // Giải mã base64 từ frontend gửi lên
-  var contentType = data.contentType;
-  var byteCharacters = Utilities.base64Decode(data.base64Data);
-  var blob = Utilities.newBlob(byteCharacters, contentType, data.fileName);
-  
-  var file = folder.createFile(blob);
-  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-  
-  return ContentService.createTextOutput(JSON.stringify({
-    "url": file.getUrl(),
-    "fileId": file.getId()
-  })).setMimeType(ContentService.MimeType.JSON);
-}
-```
+## 7. 📖 Hướng dẫn Tích hợp Phân hệ mới
+Để một Repository mới tham gia vào hệ sinh thái HEM, cần thực hiện:
+1.  Nhúng Supabase SDK qua CDN.
+2.  Thêm đoạn mã kiểm tra Session ở đầu file `app.js`.
+3.  Nếu chưa có Session, thực hiện Redirect về `ungdung.hem.com.vn`.
+4.  Cấu hình **Redirect URL** trong Supabase Dashboard (Authentication > URL Configuration).
 
 ---
-
-# 🚀 BƯỚC TIẾP THEO BẠN CẦN LÀM:
-
-1.  **Bước 1:** Tạo một thư mục trên Google Drive và lấy ID của nó.
-2.  **Bước 2:** Truy cập [script.google.com](https://script.google.com), dán đoạn mã trên, thay ID thư mục và nhấn **Deploy -> Web App** (Chọn quyền truy cập cho "Anyone").
-3.  **Bước 3:** Chạy Script Master SQL trên Supabase.
-4.  **Bước 4:** Bắt đầu code Frontend cho trang **Tra cứu sản phẩm**.
-
-**Bạn có muốn tôi cung cấp đoạn code mẫu (React + Vite) để kết nối với Supabase và thực hiện tính năng Tra cứu sản phẩm ngay không?**
+**HEM IT Team**
+*Cập nhật lần cuối: 24/05/2024*
