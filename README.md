@@ -64,5 +64,5 @@ Toàn bộ các ứng dụng dùng chung **01 Project Supabase**. Bảng dữ li
 4.  Cấu hình **Redirect URL** trong Supabase Dashboard (Authentication > URL Configuration).
 
 ---
-**HEM IT Team**
-*Cập nhật lần cuối: 24/05/2024*
+**HEMEMM SystemAdmin**
+*Cập nhật lần cuối: 2026/07/19*
