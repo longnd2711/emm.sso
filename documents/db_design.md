@@ -1,20 +1,37 @@
 
-# 🏗️ TÀI LIỆU THIẾT KẾ CƠ SỞ DỮ LIỆU TỔNG THỂ (UNIFIED DB DESIGN)
+# 🏗️ THIẾT KẾ CƠ SỞ DỮ LIỆU TỔNG THỂ: HEM EMM
 
-## 1. GIỚI THIỆU HỆ THỐNG
-Hệ thống được thiết kế trên nền tảng **PostgreSQL (Supabase)**, phục vụ 4 mục tiêu chiến lược:
-1.  **Quản trị Nhân sự:** Quản lý hồ sơ, phòng ban và phân quyền tập trung.
-2.  **Chấm công thông minh:** Chống gian lận bằng GPS, hình ảnh và hỗ trợ đồng bộ Offline.
-3.  **Quản lý Tài sản (CMDB):** Theo dõi vòng đời thiết bị, bàn giao có đối soát hình ảnh và quản lý License.
-4.  **Sản phẩm & Bảo hành:** Quản lý số Serial sản phẩm, kích hoạt bảo hành và truy vết QR Code.
+## 1. NGUYÊN TẮC CẤU TRÚC
+*   **Định danh:** Sử dụng `UUID v4` làm Khóa chính (PK) cho tất cả các bảng.
+*   **Quan hệ:** Sử dụng Khóa ngoại (FK) chặt chẽ với các ràng buộc `ON DELETE RESTRICT` hoặc `CASCADE` tùy theo nghiệp vụ.
+*   **Linh hoạt:** Tận dụng kiểu dữ liệu `JSONB` để quản lý quyền hạn ứng dụng, thông số kỹ thuật tài sản và thông tin mua sắm.
+*   **Hiệu năng:** Đánh chỉ mục (Index) cho 100% Khóa ngoại và các trường tìm kiếm trọng yếu.
 
-## 2. CẤU TRÚC DỮ LIỆU (SCHEMA)
-*   **Định danh:** 100% sử dụng `UUID v4` làm Khóa chính (Primary Key).
-*   **Linh hoạt:** Sử dụng `JSONB` cho các trường thông số kỹ thuật (`specifications`) và thông tin mua sắm (`purchase_info`).
-*   **Hiệu năng:** Toàn bộ Khóa ngoại (Foreign Keys) được đánh Chỉ mục (Index) để tối ưu hóa tốc độ truy vấn JOIN và bảo vệ hiệu năng khi thực hiện lệnh DELETE.
+## 2. CHI TIẾT CÁC PHÂN HỆ DỮ LIỆU
 
-## 3. KHỐI LỆNH SQL DUY NHẤT (MASTER DEPLOYMENT SCRIPT)
-*Bạn chỉ cần copy toàn bộ đoạn mã dưới đây và chạy một lần duy nhất trong SQL Editor của Supabase.*
+### 2.1. Phân hệ Nhân sự & Tổ chức (Core HR)
+*   **`profiles`**: Hợp nhất thông tin định danh và quyền hạn.
+    *   `app_permissions`: Lưu trữ quyền chi tiết cho từng phân hệ (Ví dụ: `{"taisan": "admin", "chamcong": "employee"}`).
+*   **`departments`**: Cấu trúc cây (Tree) cho sơ đồ tổ chức công ty.
+    *   `parent_id`: Tham chiếu ngược lại chính bảng `departments`.
+    *   `manager_id`: Tham chiếu đến `profiles` (Trưởng phòng).
+
+### 2.2. Phân hệ Nghiệp vụ Nội bộ (Internal Operations)
+*   **`attendances`**: Chấm công GPS & Hình ảnh.
+*   **`requests`**: Đơn từ nghỉ phép, OT, sửa công.
+*   **`assets`**: Quản lý tài sản (CMDB) với thông số linh hoạt qua JSONB.
+*   **`asset_handover_logs`**: Nhật ký giao nhận thiết bị kèm bằng chứng ảnh.
+
+### 2.3. Phân hệ Sản phẩm & Khách hàng (Product & CRM)
+*   **`product_types`**: Danh mục dòng máy.
+*   **`motors`**: Danh sách máy vật lý (Serial Number).
+*   **`customers`**: Danh sách khách hàng và đại lý.
+*   **`registrations`**: Kích hoạt bảo hành và xác nhận sở hữu.
+*   **`scan_logs`**: Vết quét QR Code trên sản phẩm.
+
+---
+
+## 3. KHỐI LỆNH SQL KHỞI TẠO DUY NHẤT (MASTER SQL SCRIPT)
 
 ```sql
 -- ==============================================================================
@@ -22,18 +39,6 @@ Hệ thống được thiết kế trên nền tảng **PostgreSQL (Supabase)**,
 -- ==============================================================================
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Xóa các Type cũ nếu tồn tại để đảm bảo tính nhất quán
-DROP TYPE IF EXISTS public.user_status CASCADE;
-DROP TYPE IF EXISTS public.group_role CASCADE;
-DROP TYPE IF EXISTS public.asset_status CASCADE;
-DROP TYPE IF EXISTS public.handover_type CASCADE;
-DROP TYPE IF EXISTS public.motor_status CASCADE;
-DROP TYPE IF EXISTS public.customer_type CASCADE;
-DROP TYPE IF EXISTS public.registration_status CASCADE;
-DROP TYPE IF EXISTS public.request_type CASCADE;
-DROP TYPE IF EXISTS public.request_status CASCADE;
-
--- Khởi tạo các ENUM
 CREATE TYPE public.user_status AS ENUM ('working', 'resigned');
 CREATE TYPE public.group_role AS ENUM ('employee', 'manager', 'hr_admin', 'admin', 'staff', 'technician');
 CREATE TYPE public.asset_status AS ENUM ('in_stock', 'in_use', 'maintenance', 'broken', 'retired');
@@ -48,18 +53,18 @@ CREATE TYPE public.request_status AS ENUM ('pending', 'approved', 'rejected');
 -- 2. CÁC BẢNG DANH MỤC GỐC (CORE TABLES)
 -- ==============================================================================
 
--- Phòng ban
+-- Bảng Phòng ban (Sơ đồ tổ chức đa cấp)
 CREATE TABLE public.departments (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     dep_code VARCHAR(20) UNIQUE NOT NULL,
     name VARCHAR(100) NOT NULL,
-    parent_id UUID REFERENCES public.departments(id),
+    parent_id UUID REFERENCES public.departments(id) ON DELETE SET NULL,
     manager_id UUID, -- Sẽ liên kết tới profiles sau
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Hồ sơ người dùng (Hợp nhất Nhân sự & Tài khoản)
+-- Bảng Hồ sơ người dùng (Hợp nhất quyền App JSONB)
 CREATE TABLE public.profiles (
     id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     employee_code VARCHAR(50) UNIQUE NOT NULL,
@@ -67,20 +72,27 @@ CREATE TABLE public.profiles (
     phone_number VARCHAR(20),
     company_email VARCHAR(100) UNIQUE,
     personal_email VARCHAR(100),
-    department_id UUID REFERENCES public.departments(id),
+    department_id UUID REFERENCES public.departments(id) ON DELETE SET NULL,
     title VARCHAR(100),
-    manager_id UUID REFERENCES public.profiles(id),
+    manager_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
     role public.group_role NOT NULL DEFAULT 'employee',
+    app_permissions JSONB DEFAULT '{
+        "lichhop": "employee",
+        "taisan": "none",
+        "chamcong": "employee",
+        "tracuu": "viewer",
+        "sanxuat": "none"
+    }'::jsonb,
     status public.user_status DEFAULT 'working',
     avatar_url TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Cập nhật ràng buộc cho bảng departments
-ALTER TABLE public.departments ADD CONSTRAINT fk_dept_manager FOREIGN KEY (manager_id) REFERENCES public.profiles(id);
+-- Cập nhật ràng buộc manager cho phòng ban
+ALTER TABLE public.departments ADD CONSTRAINT fk_dept_manager FOREIGN KEY (manager_id) REFERENCES public.profiles(id) ON DELETE SET NULL;
 
--- Khách hàng & Đại lý
+-- Bảng Khách hàng & Đại lý
 CREATE TABLE public.customers (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     customer_type public.customer_type NOT NULL DEFAULT 'retail',
@@ -95,9 +107,10 @@ CREATE TABLE public.customers (
 );
 
 -- ==============================================================================
--- 3. PHÂN HỆ CHẤM CÔNG & ĐƠN TỪ (ATTENDANCE)
+-- 3. PHÂN HỆ NGHIỆP VỤ (OPERATIONS)
 -- ==============================================================================
 
+-- Chấm công
 CREATE TABLE public.attendances (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
@@ -113,6 +126,7 @@ CREATE TABLE public.attendances (
     status VARCHAR(50) -- on_time, late, early_leave, missing
 );
 
+-- Đơn từ
 CREATE TABLE public.requests (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
@@ -125,60 +139,48 @@ CREATE TABLE public.requests (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- ==============================================================================
--- 4. PHÂN HỆ QUẢN LÝ TÀI SẢN - CMDB (ASSETS)
--- ==============================================================================
-
-CREATE TABLE public.asset_groups (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    group_code VARCHAR(20) UNIQUE NOT NULL,
-    name VARCHAR(100) NOT NULL,
-    is_active BOOLEAN DEFAULT TRUE
-);
-
-CREATE TABLE public.device_types (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    group_id UUID REFERENCES public.asset_groups(id),
-    type_code VARCHAR(20) UNIQUE NOT NULL,
-    name VARCHAR(100) NOT NULL,
-    specs_schema JSONB DEFAULT '{}'
-);
-
+-- Tài sản (CMDB)
 CREATE TABLE public.assets (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     asset_code VARCHAR(50) UNIQUE NOT NULL,
-    device_type_id UUID REFERENCES public.device_types(id),
-    current_user_id UUID REFERENCES public.profiles(id),
+    name VARCHAR(255) NOT NULL,
     status public.asset_status DEFAULT 'in_stock',
+    current_user_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
     purchase_info JSONB DEFAULT '{}',
     specifications JSONB DEFAULT '{}',
     usage_location VARCHAR(255),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Nhật ký bàn giao tài sản
 CREATE TABLE public.asset_handover_logs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    asset_id UUID REFERENCES public.assets(id) NOT NULL,
-    user_id UUID REFERENCES public.profiles(id) NOT NULL,
+    asset_id UUID REFERENCES public.assets(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
     action_type public.handover_type NOT NULL,
     photo_url TEXT NOT NULL,
     condition_notes TEXT,
-    action_date TIMESTAMPTZ DEFAULT NOW()
+    action_date TIMESTAMPTZ DEFAULT NOW(),
+    performed_by UUID REFERENCES public.profiles(id)
 );
 
 -- ==============================================================================
--- 5. PHÂN HỆ SẢN PHẨM & BẢO HÀNH (WARRANTY)
+-- 4. PHÂN HỆ SẢN PHẨM & BẢO HÀNH (WARRANTY)
 -- ==============================================================================
 
+-- Dòng sản phẩm
 CREATE TABLE public.product_types (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     model_code VARCHAR(50) NOT NULL UNIQUE,
     name VARCHAR(255) NOT NULL,
     warranty_months INT NOT NULL DEFAULT 12,
     specifications JSONB DEFAULT '{}',
+    created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Máy vật lý
 CREATE TABLE public.motors (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     serial_number VARCHAR(100) NOT NULL UNIQUE,
@@ -186,13 +188,16 @@ CREATE TABLE public.motors (
     manufacture_date DATE NOT NULL,
     status public.motor_status NOT NULL DEFAULT 'in_stock',
     warranty_expiry_date DATE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Đăng ký bảo hành
 CREATE TABLE public.registrations (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     motor_id UUID NOT NULL REFERENCES public.motors(id) ON DELETE CASCADE,
     customer_id UUID NOT NULL REFERENCES public.customers(id),
+    purchase_date DATE NOT NULL,
     status public.registration_status NOT NULL DEFAULT 'pending',
     is_active BOOLEAN NOT NULL DEFAULT false,
     verified_by UUID REFERENCES public.profiles(id),
@@ -201,20 +206,7 @@ CREATE TABLE public.registrations (
 );
 CREATE UNIQUE INDEX unique_active_registration ON public.registrations(motor_id) WHERE is_active = true;
 
-CREATE TABLE public.maintenance_logs (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    motor_id UUID NOT NULL REFERENCES public.motors(id) ON DELETE CASCADE,
-    service_type VARCHAR(100) NOT NULL,
-    service_date DATE NOT NULL DEFAULT CURRENT_DATE,
-    technician_name VARCHAR(255),
-    description TEXT,
-    updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- ==============================================================================
--- 6. LOGS & GIÁM SÁT (MONITORING)
--- ==============================================================================
-
+-- Vết quét QR
 CREATE TABLE public.scan_logs (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     motor_id UUID NOT NULL REFERENCES public.motors(id) ON DELETE CASCADE,
@@ -223,6 +215,7 @@ CREATE TABLE public.scan_logs (
     device_info TEXT
 );
 
+-- Nhật ký thay đổi (Audit)
 CREATE TABLE public.audit_logs (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID REFERENCES public.profiles(id),
@@ -235,60 +228,33 @@ CREATE TABLE public.audit_logs (
 );
 
 -- ==============================================================================
--- 7. TỐI ƯU HÓA CHỈ MỤC (INDEXES FOR PERFORMANCE)
+-- 5. TỐI ƯU HÓA CHỈ MỤC (INDEXES)
 -- ==============================================================================
 
--- Core & HR
 CREATE INDEX idx_profiles_dept ON public.profiles(department_id);
 CREATE INDEX idx_profiles_mgr ON public.profiles(manager_id);
+CREATE INDEX idx_profiles_permissions ON public.profiles USING GIN (app_permissions);
 CREATE INDEX idx_dept_parent ON public.departments(parent_id);
-
--- Attendance & Requests
 CREATE INDEX idx_att_user_date ON public.attendances(user_id, date);
-CREATE INDEX idx_req_user ON public.requests(user_id);
-
--- Assets
-CREATE INDEX idx_assets_type ON public.assets(device_type_id);
 CREATE INDEX idx_assets_user ON public.assets(current_user_id);
 CREATE INDEX idx_handover_asset ON public.asset_handover_logs(asset_id);
-CREATE INDEX idx_handover_user ON public.asset_handover_logs(user_id);
-
--- Warranty
 CREATE INDEX idx_motors_type ON public.motors(product_type_id);
 CREATE INDEX idx_reg_motor ON public.registrations(motor_id);
-CREATE INDEX idx_reg_customer ON public.registrations(customer_id);
-CREATE INDEX idx_scan_motor ON public.scan_logs(motor_id);
-
--- Audit
 CREATE INDEX idx_audit_time ON public.audit_logs(created_at);
 
 -- ==============================================================================
--- 8. HÀM VÀ TRIGGERS TỰ ĐỘNG (AUTOMATION)
+-- 6. TRIGGERS & LOGIC TỰ ĐỘNG
 -- ==============================================================================
 
--- Hàm cập nhật updated_at
+-- Cập nhật updated_at
 CREATE OR REPLACE FUNCTION public.handle_updated_at()
 RETURNS TRIGGER AS $$ BEGIN NEW.updated_at = NOW(); RETURN NEW; END; $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER trg_upd_profiles BEFORE UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+CREATE TRIGGER trg_upd_depts BEFORE UPDATE ON public.departments FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 CREATE TRIGGER trg_upd_assets BEFORE UPDATE ON public.assets FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
-CREATE TRIGGER trg_upd_motors BEFORE UPDATE ON public.motors FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 
--- Tự động tính ngày hết hạn bảo hành
-CREATE OR REPLACE FUNCTION public.calculate_warranty_expiry()
-RETURNS TRIGGER AS $$
-DECLARE w_months INT;
-BEGIN
-    IF NEW.warranty_expiry_date IS NULL THEN
-        SELECT warranty_months INTO w_months FROM public.product_types WHERE id = NEW.product_type_id;
-        IF FOUND THEN NEW.warranty_expiry_date := NEW.manufacture_date + (w_months || ' months')::INTERVAL; END IF;
-    END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-CREATE TRIGGER trg_calc_warranty BEFORE INSERT OR UPDATE ON public.motors FOR EACH ROW EXECUTE FUNCTION public.calculate_warranty_expiry();
-
--- Tự động cập nhật trạng thái tài sản khi bàn giao
+-- Tự động cập nhật trạng thái tài sản
 CREATE OR REPLACE FUNCTION public.update_asset_status_on_handover()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -300,43 +266,24 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
 CREATE TRIGGER trg_handover_status AFTER INSERT ON public.asset_handover_logs FOR EACH ROW EXECUTE FUNCTION public.update_asset_status_on_handover();
 
 -- ==============================================================================
--- 9. BẢO MẬT CẤP DÒNG (ROW LEVEL SECURITY - RLS)
+-- 7. BẢO MẬT CẤP DÒNG (RLS)
 -- ==============================================================================
 
--- Bật RLS cho các bảng quan trọng
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.attendances ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.assets ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.registrations ENABLE ROW LEVEL SECURITY;
 
--- Hàm hỗ trợ lấy Role
 CREATE OR REPLACE FUNCTION public.get_current_user_role()
 RETURNS text AS $$ SELECT role::text FROM public.profiles WHERE id = auth.uid(); $$ LANGUAGE sql SECURITY DEFINER;
 
--- Policies cho Profiles
-CREATE POLICY "Profiles viewable by authenticated" ON public.profiles FOR SELECT USING (auth.uid() IS NOT NULL);
-CREATE POLICY "Admins manage profiles" ON public.profiles FOR ALL USING (public.get_current_user_role() IN ('admin', 'hr_admin'));
-
--- Policies cho Attendances
-CREATE POLICY "Users view own attendance" ON public.attendances FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "HR view all attendance" ON public.attendances FOR SELECT USING (public.get_current_user_role() IN ('admin', 'hr_admin'));
-
--- Policies cho Assets
-CREATE POLICY "Users view assigned assets" ON public.assets FOR SELECT USING (auth.uid() = current_user_id);
-CREATE POLICY "HR manage assets" ON public.assets FOR ALL USING (public.get_current_user_role() IN ('admin', 'hr_admin'));
-
--- Policies cho Registrations (Bảo hành)
-CREATE POLICY "Public view active registrations" ON public.registrations FOR SELECT USING (is_active = true);
-CREATE POLICY "Staff manage registrations" ON public.registrations FOR ALL USING (public.get_current_user_role() IN ('admin', 'staff'));
-
--- HOÀN TẤT
+-- Chính sách mẫu cho Profiles
+CREATE POLICY "Xem hồ sơ đồng nghiệp" ON public.profiles FOR SELECT USING (auth.uid() IS NOT NULL);
+CREATE POLICY "Admin quản lý hồ sơ" ON public.profiles FOR ALL USING (public.get_current_user_role() IN ('admin', 'hr_admin'));
 ```
 
-## 4. ƯU ĐIỂM CỦA THIẾT KẾ NÀY
-1.  **Tốc độ tối đa:** Nhờ hệ thống Index bao phủ toàn bộ các mối quan hệ bảng, các câu lệnh JOIN sẽ chạy cực nhanh.
-2.  **Bảo mật tuyệt đối:** RLS đảm bảo dữ liệu không bị rò rỉ giữa các nhân viên, trong khi Admin vẫn có quyền kiểm soát toàn diện.
-3.  **Giảm thiểu Code Frontend:** Các logic như "đổi trạng thái máy khi bàn giao" hay "tính ngày bảo hành" đã được xử lý tự động ở Database, giúp code Frontend sạch và ít lỗi hơn.
-4.  **Sẵn sàng cho dữ liệu lớn:** Cấu trúc này có thể chịu tải hàng trăm nghìn bản ghi chấm công và tài sản mà không bị chậm.
+---
+**Hết bản Thiết kế Cơ sở dữ liệu.**
