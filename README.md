@@ -1,5 +1,3 @@
----
-
 # 📅 KẾ HOẠCH TRIỂN KHAI CHI TIẾT (REVISED)
 
 ## GIAI ĐOẠN 1: THIẾT LẬP NỀN TẢNG & CẦU NỐI GOOGLE DRIVE
