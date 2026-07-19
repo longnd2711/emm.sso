@@ -1,5 +1,5 @@
 
-# 📖 TỪ ĐIỂN DỮ LIỆU: HỆ THỐNG HEM EMM (v4.0)
+# 📖 TỪ ĐIỂN DỮ LIỆU: HỆ THỐNG HEM EMM
 
 ## 1. PHÂN HỆ TỔ CHỨC & NHÂN SỰ (CORE HR)
 
