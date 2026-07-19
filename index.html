@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HEM Ecosystem - Đăng nhập tập trung</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Vue.js 3 CDN -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- Supabase JS SDK -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #1e3a8a 0%, #134e4a 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 15px;
+        }
+
+        /* Glassmorphism Effect */
+        .glass-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 2rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            width: 100%;
+            max-width: 450px;
+            padding: 2rem;
+            color: white;
+        }
+
+        .glass-input {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .glass-input:focus {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: #38bdf8;
+            outline: none;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, #0ea5e9 0%, #2563eb 100%);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        .app-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .app-card:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-5px);
+        }
+
+        [v-cloak] { display: none; }
+    </style>
+</head>
+<body>
+
+    <div id="app" v-cloak class="glass-container">
+        
+        <!-- HEADER -->
+        <div class="text-center mb-8">
+            <h1 class="text-2xl font-bold tracking-wider text-sky-400 mb-1">HEM Ecosystem</h1>
+            <p class="text-sm text-gray-300">Hệ thống quản trị nội bộ EMM</p>
+        </div>
+
+        <!-- MÀN HÌNH ĐĂNG NHẬP -->
+        <div v-if="!session" class="space-y-6">
+            <div class="text-center">
+                <div class="inline-flex p-4 rounded-full bg-white/10 mb-4">
+                    <i data-lucide="lock" class="w-8 h-8 text-sky-400"></i>
+                </div>
+                <h2 class="text-xl font-semibold">Đăng nhập hệ thống</h2>
+                <p class="text-xs text-gray-400 mt-2">Sử dụng tài khoản nội bộ để tiếp tục</p>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <input type="email" v-model="email" placeholder="Email nhân viên" 
+                           class="glass-input w-full px-4 py-3 rounded-xl text-sm">
+                </div>
+                <div class="relative">
+                    <input :type="showPassword ? 'text' : 'password'" v-model="password" placeholder="Mật khẩu" 
+                           class="glass-input w-full px-4 py-3 rounded-xl text-sm">
+                    <button @click="showPassword = !showPassword" class="absolute right-3 top-3 text-gray-400">
+                        <i :data-lucide="showPassword ? 'eye-off' : 'eye'" class="w-5 h-5"></i>
+                    </button>
+                </div>
+                <div class="text-right">
+                    <a href="#" class="text-xs text-sky-400 hover:underline">Quên mật khẩu?</a>
+                </div>
+                <button @click="handleLogin" :disabled="loading"
+                        class="btn-primary w-full py-3 rounded-xl font-semibold shadow-lg flex items-center justify-center">
+                    <span v-if="loading" class="animate-spin mr-2">◌</span>
+                    {{ loading ? 'Đang xác thực...' : 'Đăng nhập' }}
+                </button>
+            </div>
+        </div>
+
+        <!-- MÀN HÌNH DASHBOARD (SAU KHI LOGIN) -->
+        <div v-else class="space-y-6">
+            <div class="flex items-center justify-between bg-white/5 p-3 rounded-2xl border border-white/10">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-full bg-sky-500 flex items-center justify-center font-bold">
+                        {{ userInitial }}
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-400">Xin chào,</p>
+                        <p class="text-sm font-semibold truncate w-32">{{ profile?.full_name || 'Nhân viên' }}</p>
+                    </div>
+                </div>
+                <button @click="handleLogout" class="p-2 hover:bg-white/10 rounded-lg text-red-400">
+                    <i data-lucide="log-out" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div v-for="app in apps" :key="app.name" @click="goToApp(app.url)"
+                     class="app-card p-4 rounded-2xl text-center cursor-pointer">
+                    <div :class="`w-12 h-12 mx-auto mb-3 rounded-xl flex items-center justify-center ${app.color}`">
+                        <i :data-lucide="app.icon" class="w-6 h-6 text-white"></i>
+                    </div>
+                    <p class="text-xs font-medium">{{ app.name }}</p>
+                </div>
+            </div>
+
+            <div v-if="profile?.role === 'admin'" class="pt-4 border-t border-white/10">
+                <button class="w-full py-3 bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded-xl text-sm font-medium flex items-center justify-center">
+                    <i data-lucide="settings" class="w-4 h-4 mr-2"></i>
+                    Quản trị hệ thống
+                </button>
+            </div>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="mt-8 pt-6 border-t border-white/10 text-center text-[10px] text-gray-400 space-y-2">
+            <div class="flex justify-center space-x-4 mb-4">
+                <button class="px-3 py-1 bg-white/10 rounded-full">Bright IO</button>
+                <button class="px-3 py-1 bg-white/20 rounded-full ring-1 ring-sky-400">Dark Glass</button>
+                <button class="px-3 py-1 bg-white/10 rounded-full">Light Frosted</button>
+            </div>
+            <p>© 2024 HEMEMM. All rights reserved.</p>
+            <p class="text-sky-500">Hỗ trợ IT • Lễ tân</p>
+            <p>Thông báo cập nhật v3.5.0.1</p>
+        </div>
+
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, computed } = Vue;
+
+        // CẤU HÌNH SUPABASE
+        const SUPABASE_URL = 'https://YOUR_PROJECT_ID.supabase.co';
+        const SUPABASE_KEY = 'YOUR_ANON_KEY';
+        const supabase = org.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        createApp({
+            setup() {
+                const email = ref('');
+                const password = ref('');
+                const loading = ref(false);
+                const session = ref(null);
+                const profile = ref(null);
+                const showPassword = ref(false);
+
+                const apps = [
+                    { name: 'Lịch họp', icon: 'calendar', url: 'lichhop.hem.com.vn', color: 'bg-blue-500' },
+                    { name: 'Tài sản', icon: 'monitor', url: 'taisan.hem.com.vn', color: 'bg-purple-500' },
+                    { name: 'Sản xuất', icon: 'factory', url: 'sanxuat.hem.com.vn', color: 'bg-green-500' },
+                    { name: 'Tra cứu', icon: 'search', url: 'tracuu.hem.com.vn', color: 'bg-amber-500' }
+                ];
+
+                const userInitial = computed(() => {
+                    return profile.value?.full_name?.charAt(0).toUpperCase() || '?';
+                });
+
+                // KIỂM TRA SESSION & SSO REDIRECT
+                onMounted(async () => {
+                    const { data } = await supabase.auth.getSession();
+                    session.value = data.session;
+                    if (session.value) fetchProfile();
+                    
+                    // Xử lý Lucide Icons
+                    lucide.createIcons();
+                });
+
+                async function fetchProfile() {
+                    const { data } = await supabase
+                        .from('profiles')
+                        .select('*')
+                        .eq('id', session.value.user.id)
+                        .single();
+                    profile.value = data;
+                }
+
+                async function handleLogin() {
+                    loading.value = true;
+                    const { data, error } = await supabase.auth.signInWithPassword({
+                        email: email.value,
+                        password: password.value
+                    });
+
+                    if (error) {
+                        alert("Lỗi: " + error.message);
+                    } else {
+                        session.value = data.session;
+                        await fetchProfile();
+                        
+                        // KIỂM TRA NẾU CÓ YÊU CẦU REDIRECT TỪ APP CON
+                        const urlParams = new URLSearchParams(window.location.search);
+                        const redirectUrl = urlParams.get('redirect');
+                        if (redirectUrl) {
+                            const token = data.session.access_token;
+                            const refresh = data.session.refresh_token;
+                            window.location.href = `https://${redirectUrl}/#access_token=${token}&refresh_token=${refresh}`;
+                        }
+                    }
+                    loading.value = false;
+                    setTimeout(() => lucide.createIcons(), 100);
+                }
+
+                async function handleLogout() {
+                    await supabase.auth.signOut();
+                    session.value = null;
+                    profile.value = null;
+                    setTimeout(() => lucide.createIcons(), 100);
+                }
+
+                function goToApp(url) {
+                    window.location.href = `https://${url}`;
+                }
+
+                return {
+                    email, password, loading, session, profile, apps,
+                    showPassword, userInitial, handleLogin, handleLogout, goToApp
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
