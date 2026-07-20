@@ -267,4 +267,33 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 ```
 
 ---
-**Hết bản Thiết kế Cơ sở dữ liệu.**
+**tiếp theo: tạo admin trong authentication của supabase và chạy thêm admin.**
+```sql
+-- 1. Tạo phòng ban Admin
+INSERT INTO public.departments (dep_code, name)
+VALUES ('ADMIN_DEPT', 'BAN QUẢN TRỊ HỆ THỐNG')
+ON CONFLICT DO NOTHING;
+
+-- 2. Cấp quyền Admin tối cao cho bạn
+-- THAY 'ID_CỦA_BẠN' bằng mã UUID copy từ bước trên
+INSERT INTO public.profiles (
+    id, 
+    employee_code, 
+    full_name, 
+    role, 
+    status, 
+    department_id,
+    app_permissions
+)
+VALUES (
+    'ID_CỦA_BẠN', 
+    'HEM-ADMIN-01', 
+    'Super Admin HEM', 
+    'admin', 
+    'working',
+    (SELECT id FROM public.departments WHERE dep_code = 'ADMIN_DEPT' LIMIT 1),
+    '{"taisan": "admin", "chamcong": "admin", "lichhop": "admin", "tracuu": "admin", "sanxuat": "admin"}'::jsonb
+)
+ON CONFLICT (id) DO UPDATE SET role = 'admin';
+```
+**done**
