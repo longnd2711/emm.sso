@@ -34,13 +34,14 @@
 ## 3. KHỐI LỆNH SQL KHỞI TẠO DUY NHẤT (MASTER SQL SCRIPT)
 
 ```sql
+-- STREAMING_CHUNK: Khởi tạo tiện ích và dọn dẹp cấu trúc cũ...
 -- ==============================================================================
--- 1. DỌN DẸP & KHỞI TẠO EXTENSIONS
+-- 1. DỌN DẸP & KHỞI TẠO TIỆN ÍCH
 -- ==============================================================================
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
--- Xóa toàn bộ cấu trúc cũ để làm mới (Thứ tự xóa từ bảng con đến bảng cha)
+-- Xóa cấu trúc cũ (nếu chạy lại script)
 DROP TABLE IF EXISTS public.audit_logs CASCADE;
 DROP TABLE IF EXISTS public.scan_logs CASCADE;
 DROP TABLE IF EXISTS public.registrations CASCADE;
@@ -52,34 +53,29 @@ DROP TABLE IF EXISTS public.requests CASCADE;
 DROP TABLE IF EXISTS public.attendances CASCADE;
 DROP TABLE IF EXISTS public.profiles CASCADE;
 DROP TABLE IF EXISTS public.departments CASCADE;
-DROP TABLE IF EXISTS public.customers CASCADE;
 
--- Xóa và tạo lại các kiểu dữ liệu ENUM
+-- STREAMING_CHUNK: Định nghĩa các kiểu dữ liệu ENUM...
+-- Xóa và tạo lại ENUMs
 DROP TYPE IF EXISTS public.user_status CASCADE;
 DROP TYPE IF EXISTS public.group_role CASCADE;
 DROP TYPE IF EXISTS public.asset_status CASCADE;
 DROP TYPE IF EXISTS public.handover_type CASCADE;
 DROP TYPE IF EXISTS public.motor_status CASCADE;
-DROP TYPE IF EXISTS public.customer_type CASCADE;
 DROP TYPE IF EXISTS public.registration_status CASCADE;
-DROP TYPE IF EXISTS public.request_type CASCADE;
-DROP TYPE IF EXISTS public.request_status CASCADE;
 
 CREATE TYPE public.user_status AS ENUM ('working', 'resigned');
 CREATE TYPE public.group_role AS ENUM ('employee', 'manager', 'hr_admin', 'admin', 'staff', 'technician');
 CREATE TYPE public.asset_status AS ENUM ('in_stock', 'in_use', 'maintenance', 'broken', 'retired');
 CREATE TYPE public.handover_type AS ENUM ('checkout', 'checkin');
 CREATE TYPE public.motor_status AS ENUM ('in_stock', 'distributed', 'sold', 'registered');
-CREATE TYPE public.customer_type AS ENUM ('dealer', 'corporate', 'retail');
 CREATE TYPE public.registration_status AS ENUM ('pending', 'approved', 'rejected');
-CREATE TYPE public.request_type AS ENUM ('leave', 'late_early', 'ot', 'correction');
-CREATE TYPE public.request_status AS ENUM ('pending', 'approved', 'rejected');
 
+-- STREAMING_CHUNK: Tạo bảng phòng ban và hồ sơ người dùng...
 -- ==============================================================================
--- 2. CÁC BẢNG DANH MỤC GỐC (CORE TABLES)
+-- 2. TẠO CÁC BẢNG CỐT LÕI
 -- ==============================================================================
 
--- Bảng Phòng ban (Sơ đồ đa cấp)
+-- Bảng Phòng ban
 CREATE TABLE public.departments (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     dep_code VARCHAR(20) UNIQUE NOT NULL,
@@ -90,38 +86,29 @@ CREATE TABLE public.departments (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Bảng Hồ sơ người dùng (Hợp nhất quyền JSONB)
+-- Bảng Hồ sơ người dùng
 CREATE TABLE public.profiles (
     id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     employee_code VARCHAR(50) UNIQUE NOT NULL,
     full_name VARCHAR(255) NOT NULL,
     phone_number VARCHAR(20),
     company_email VARCHAR(100) UNIQUE,
-    department_id UUID REFERENCES public.departments(id) ON DELETE SET NULL,
+    department_id UUID CONSTRAINT profiles_department_id_fkey REFERENCES public.departments(id) ON DELETE SET NULL,
     title VARCHAR(100),
     manager_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
     role public.group_role NOT NULL DEFAULT 'employee',
-    app_permissions JSONB DEFAULT '{
-        "lichhop": "employee",
-        "taisan": "none",
-        "chamcong": "employee",
-        "tracuu": "viewer",
-        "sanxuat": "none"
-    }'::jsonb,
+    app_permissions JSONB DEFAULT '{}'::jsonb,
     status public.user_status DEFAULT 'working',
     avatar_url TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Ràng buộc Trưởng phòng cho bảng departments
-ALTER TABLE public.departments ADD CONSTRAINT fk_dept_manager FOREIGN KEY (manager_id) REFERENCES public.profiles(id) ON DELETE SET NULL;
+-- Cập nhật ràng buộc manager cho departments
+ALTER TABLE public.departments ADD CONSTRAINT departments_manager_id_fkey FOREIGN KEY (manager_id) REFERENCES public.profiles(id) ON DELETE SET NULL;
 
--- ==============================================================================
--- 3. PHÂN HỆ NGHIỆP VỤ (OPERATIONS)
--- ==============================================================================
-
--- Chấm công
+-- STREAMING_CHUNK: Tạo các bảng nghiệp vụ (Chấm công, Tài sản)...
+-- Các bảng nghiệp vụ khác (Attendances, Assets...)
 CREATE TABLE public.attendances (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
@@ -129,137 +116,104 @@ CREATE TABLE public.attendances (
     check_in_time TIMESTAMPTZ,
     check_out_time TIMESTAMPTZ,
     check_in_lat NUMERIC, check_in_lng NUMERIC,
-    check_out_lat NUMERIC, check_out_lng NUMERIC,
     check_in_photo_url TEXT,
-    check_out_photo_url TEXT,
-    accuracy NUMERIC,
-    is_offline_sync BOOLEAN DEFAULT FALSE,
-    status VARCHAR(50)
+    is_offline_sync BOOLEAN DEFAULT FALSE
 );
 
--- Tài sản (CMDB)
 CREATE TABLE public.assets (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     asset_code VARCHAR(50) UNIQUE NOT NULL,
     name VARCHAR(255) NOT NULL,
     status public.asset_status DEFAULT 'in_stock',
     current_user_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
-    purchase_info JSONB DEFAULT '{}',
     specifications JSONB DEFAULT '{}',
-    usage_location VARCHAR(255),
-    created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Nhật ký bàn giao
 CREATE TABLE public.asset_handover_logs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     asset_id UUID REFERENCES public.assets(id) ON DELETE CASCADE,
     user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
     action_type public.handover_type NOT NULL,
     photo_url TEXT NOT NULL,
-    condition_notes TEXT,
-    action_date TIMESTAMPTZ DEFAULT NOW(),
-    performed_by UUID REFERENCES public.profiles(id)
+    action_date TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- STREAMING_CHUNK: Thiết lập tự động cập nhật trường updated_at...
 -- ==============================================================================
--- 4. TỐI ƯU HÓA CHỈ MỤC & TỰ ĐỘNG HÓA
+-- 3. XỬ LÝ TỰ ĐỘNG CẬP NHẬT CỘT UPDATED_AT
 -- ==============================================================================
 
-CREATE INDEX idx_profiles_dept ON public.profiles(department_id);
-CREATE INDEX idx_profiles_permissions ON public.profiles USING GIN (app_permissions);
-CREATE INDEX idx_dept_parent ON public.departments(parent_id);
-CREATE INDEX idx_att_user_date ON public.attendances(user_id, date);
-
--- Hàm cập nhật updated_at
-CREATE OR REPLACE FUNCTION public.handle_updated_at()
-RETURNS TRIGGER AS $$ BEGIN NEW.updated_at = NOW(); RETURN NEW; END; $$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trg_upd_profiles BEFORE UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
-CREATE TRIGGER trg_upd_depts BEFORE UPDATE ON public.departments FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
-
--- Tự động cập nhật trạng thái tài sản
-CREATE OR REPLACE FUNCTION public.update_asset_status_on_handover()
+-- Tạo một hàm Trigger dùng chung cho toàn bộ hệ thống
+CREATE OR REPLACE FUNCTION public.update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF NEW.action_type = 'checkout' THEN
-        UPDATE public.assets SET status = 'in_use', current_user_id = NEW.user_id WHERE id = NEW.asset_id;
-    ELSIF NEW.action_type = 'checkin' THEN
-        UPDATE public.assets SET status = 'in_stock', current_user_id = NULL WHERE id = NEW.asset_id;
-    END IF;
+    NEW.updated_at = NOW();
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-CREATE TRIGGER trg_handover_status AFTER INSERT ON public.asset_handover_logs FOR EACH ROW EXECUTE FUNCTION public.update_asset_status_on_handover();
 
+-- Gắn Trigger vào các bảng có cột updated_at
+CREATE TRIGGER set_departments_updated_at
+BEFORE UPDATE ON public.departments
+FOR EACH ROW EXECUTE PROCEDURE public.update_updated_at_column();
+
+CREATE TRIGGER set_profiles_updated_at
+BEFORE UPDATE ON public.profiles
+FOR EACH ROW EXECUTE PROCEDURE public.update_updated_at_column();
+
+CREATE TRIGGER set_assets_updated_at
+BEFORE UPDATE ON public.assets
+FOR EACH ROW EXECUTE PROCEDURE public.update_updated_at_column();
+
+-- STREAMING_CHUNK: Định nghĩa các hàm bảo mật và bật RLS...
 -- ==============================================================================
--- 5. BẢO MẬT RLS (SỬA LỖI VÒNG LẶP)
+-- 4. HÀM BẢO MẬT & RLS (CHỐNG VÒNG LẶP VÔ HẠN)
 -- ==============================================================================
+
+-- Hàm đặc quyền kiểm tra Admin (SECURITY DEFINER lách qua RLS)
+CREATE OR REPLACE FUNCTION public.check_is_admin()
+RETURNS boolean AS $$
+BEGIN
+  RETURN (SELECT (role = 'admin') FROM public.profiles WHERE id = auth.uid());
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Bật RLS
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.departments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.attendances ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.assets ENABLE ROW LEVEL SECURITY;
-
--- Hàm lấy Role an toàn (Dùng SECURITY DEFINER để lách RLS)
-CREATE OR REPLACE FUNCTION public.get_my_role()
-RETURNS text AS $$
-  SELECT role::text FROM public.profiles WHERE id = auth.uid();
-$$ LANGUAGE sql SECURITY DEFINER;
-
--- Policies cho Departments
-CREATE POLICY "Select_Depts" ON public.departments FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Admin_Depts" ON public.departments FOR ALL TO authenticated USING (public.get_my_role() = 'admin');
 
 -- Policies cho Profiles
-CREATE POLICY "Select_Profiles" ON public.profiles FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Update_Own_Profile" ON public.profiles FOR UPDATE TO authenticated USING (auth.uid() = id);
-CREATE POLICY "Admin_Profiles" ON public.profiles FOR ALL TO authenticated USING (public.get_my_role() = 'admin');
+CREATE POLICY "profiles_select" ON public.profiles FOR SELECT TO authenticated USING (true);
+CREATE POLICY "profiles_admin" ON public.profiles FOR ALL TO authenticated USING (public.check_is_admin());
+
+-- Policies cho Departments
+CREATE POLICY "depts_select" ON public.departments FOR SELECT TO authenticated USING (true);
+CREATE POLICY "depts_admin" ON public.departments FOR ALL TO authenticated USING (public.check_is_admin());
+
+-- STREAMING_CHUNK: Chèn dữ liệu ban đầu và hàm tạo user...
+-- ==============================================================================
+-- 5. DỮ LIỆU BAN ĐẦU (ROOT DEPARTMENT)
+-- ==============================================================================
+INSERT INTO public.departments (dep_code, name)
+VALUES ('HEMEMM', 'CÔNG TY CỔ PHẦN CHẾ TẠO ĐIỆN CƠ HEM');
 
 -- ==============================================================================
 -- 6. HÀM ĐẶC QUYỀN: TẠO USER TỪ TRANG ADMIN (RPC)
 -- ==============================================================================
-
 CREATE OR REPLACE FUNCTION public.admin_create_user(
-    email TEXT,
-    password TEXT,
-    full_name TEXT,
-    emp_code TEXT,
-    dept_id UUID,
-    user_role public.group_role
+    email TEXT, password TEXT, full_name TEXT, emp_code TEXT, dept_id UUID, user_role public.group_role
 ) RETURNS UUID AS $$
-DECLARE
-  new_user_id UUID;
+DECLARE new_user_id UUID;
 BEGIN
-  -- Kiểm tra quyền Admin
-  IF (SELECT role FROM public.profiles WHERE id = auth.uid()) != 'admin' THEN
-    RAISE EXCEPTION 'Chỉ Admin mới có quyền tạo nhân viên!';
-  END IF;
+  IF NOT public.check_is_admin() THEN RAISE EXCEPTION 'Permission Denied'; END IF;
 
-  -- 1. Tạo tài khoản Auth
-  INSERT INTO auth.users (
-    instance_id, id, aud, role, email, encrypted_password, 
-    email_confirmed_at, raw_app_meta_data, raw_user_meta_data, 
-    created_at, updated_at, confirmation_token, recovery_token
-  )
-  VALUES (
-    '00000000-0000-0000-0000-000000000000',
-    gen_random_uuid(),
-    'authenticated',
-    'authenticated',
-    email,
-    crypt(password, gen_salt('bf')),
-    now(),
-    '{"provider":"email","providers":["email"]}',
-    jsonb_build_object('full_name', full_name),
-    now(), now(), '', ''
-  ) RETURNING id INTO new_user_id;
+  INSERT INTO auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
+  VALUES ('00000000-0000-0000-0000-000000000000', gen_random_uuid(), 'authenticated', 'authenticated', email, crypt(password, gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', jsonb_build_object('full_name', full_name), now(), now())
+  RETURNING id INTO new_user_id;
 
-  -- 2. Tạo hồ sơ Profile
-  INSERT INTO public.profiles (id, employee_code, full_name, company_email, department_id, role)
-  VALUES (new_user_id, emp_code, full_name, email, dept_id, user_role);
+  INSERT INTO public.profiles (id, employee_code, full_name, company_email, department_id, role, app_permissions)
+  VALUES (new_user_id, emp_code, full_name, email, dept_id, user_role, '{"taisan":"admin","chamcong":"admin","lichhop":"admin","tracuu":"admin"}'::jsonb);
 
   RETURN new_user_id;
 END;
@@ -269,13 +223,14 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 ---
 **tiếp theo: tạo admin trong authentication của supabase và chạy thêm admin.**
 ```sql
--- 1. Tạo phòng ban Admin
-INSERT INTO public.departments (dep_code, name)
-VALUES ('ADMIN_DEPT', 'BAN QUẢN TRỊ HỆ THỐNG')
-ON CONFLICT DO NOTHING;
+-- STREAMING_CHUNK: Tạo hồ sơ cho tài khoản Admin Auth...
+-- ==============================================================================
+-- BƯỚC 3: CẤP QUYỀN ADMIN TỐI CAO CHO TÀI KHOẢN (Chạy sau Bước 2)
+-- ==============================================================================
 
--- 2. Cấp quyền Admin tối cao cho bạn
--- THAY 'ID_CỦA_BẠN' bằng mã UUID copy từ bước trên
+-- CHÚ Ý: Hãy thay 'ID_CUA_BAN_TAI_DAY' bằng mã UUID bạn vừa copy ở Authentication (Bước 2)
+-- LƯU Ý: Phải thay ở CẢ 2 NƠI (trong lệnh INSERT và lệnh UPDATE bên dưới)
+
 INSERT INTO public.profiles (
     id, 
     employee_code, 
@@ -286,14 +241,23 @@ INSERT INTO public.profiles (
     app_permissions
 )
 VALUES (
-    'ID_CỦA_BẠN', 
-    'HEM-ADMIN-01', 
-    'Super Admin HEM', 
+    'ID_CUA_BAN_TAI_DAY', 
+    'EMM-ADMIN', 
+    'Quản trị viên hệ thống', 
     'admin', 
     'working',
-    (SELECT id FROM public.departments WHERE dep_code = 'ADMIN_DEPT' LIMIT 1),
-    '{"taisan": "admin", "chamcong": "admin", "lichhop": "admin", "tracuu": "admin", "sanxuat": "admin"}'::jsonb
+    (SELECT id FROM public.departments WHERE dep_code = 'HEMEMM' LIMIT 1),
+    '{"ungdung": "admin", "taisan": "admin", "chamcong": "admin", "lichhop": "admin", "tracuu": "admin", "sanxuat": "admin"}'::jsonb
 )
-ON CONFLICT (id) DO UPDATE SET role = 'admin';
+ON CONFLICT (id) DO UPDATE 
+SET 
+    role = EXCLUDED.role,
+    app_permissions = EXCLUDED.app_permissions;
+
+-- STREAMING_CHUNK: Gắn Admin làm trưởng phòng ban gốc...
+-- Cập nhật bạn làm trưởng phòng ban gốc (HEMEMM)
+UPDATE public.departments 
+SET manager_id = 'ID_CUA_BAN_TAI_DAY' 
+WHERE dep_code = 'HEMEMM';
 ```
 **done**
