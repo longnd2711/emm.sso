@@ -293,7 +293,7 @@
 
                 function openProfileModal() { showProfile.value = true; isEditingContact.value = false; isEditingPassword.value = false; refreshIcons(); }
                 async function handleLogout() { await supabaseClient.auth.signOut(); location.reload(); }
-                async function handleForgotPassword() { if (!email.value) return notify("Nhập Email trước", "error"); loading.value = true; const { error } = await supabaseClient.auth.resetPasswordForEmail(email.value); if (error) notify(error.message, "error"); else notify("Link reset đã gửi!"); loading.value = false; }
+                async function handleForgotPassword() { if (!email.value) return notify("Nhập Email trước", "error"); loading.value = true; const { error } = await supabaseClient.auth.resetPasswordForEmail(email.value); if (error) notify(error.message, "error"); else notify("Kiểm tra email để lấy Link khôi phục mật khẩu!"); loading.value = false; }
                 async function goToApp(url) {
                     const { data: { session: cur } } = await supabaseClient.auth.getSession();
                     if (cur) window.location.href = `https://${url}/#access_token=${cur.access_token}&refresh_token=${cur.refresh_token}`;
