@@ -3,13 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HEM Admin - Quản trị hệ thống</title>
+    <title>HEM Admin - Quản lý tài khoản</title>
     
     <!-- Thư viện CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Toastify JS -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
@@ -25,7 +29,6 @@
         .glass-card {
             background: rgba(255, 255, 255, 0.05);
             backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 1.5rem;
         }
@@ -35,46 +38,43 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
             color: white;
             width: 100%;
-            padding: 0.75rem 1rem;
+            padding: 0.6rem 1rem;
             border-radius: 0.75rem;
             font-size: 0.875rem;
         }
 
-        .glass-input:focus {
-            border-color: #f97316;
-            outline: none;
-            background: rgba(255, 255, 255, 0.12);
+        .glass-input:disabled { opacity: 0.5; cursor: not-allowed; background: rgba(0,0,0,0.2); }
+
+        select.glass-input option {
+            background-color: #1e293b !important;
+            color: white !important;
         }
 
-        .tab-btn {
-            padding: 0.75rem 1.5rem;
-            border-radius: 1rem;
-            font-weight: 600;
-            font-size: 0.875rem;
-            transition: all 0.3s ease;
-        }
+        .glass-input:focus { border-color: #f97316; outline: none; background: rgba(255, 255, 255, 0.12); }
 
-        .tab-btn.active {
-            background: #f97316;
-            color: white;
-            box-shadow: 0 4px 15px rgba(249, 115, 22, 0.3);
-        }
+        .tab-btn { padding: 0.75rem 1.5rem; border-radius: 1rem; font-weight: 600; font-size: 0.875rem; transition: all 0.3s ease; }
+        .tab-btn.active { background: #f97316; color: white; box-shadow: 0 4px 15px rgba(249, 115, 22, 0.3); }
 
-        .perm-badge {
-            padding: 2px 8px;
-            border-radius: 6px;
-            font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-        }
+        .role-badge { padding: 2px 8px; border-radius: 6px; font-size: 9px; font-weight: 700; text-transform: uppercase; }
+        .role-admin { background: #ef4444; color: white; }
+        .role-director { background: #8b5cf6; color: white; }
+        .role-hr_admin { background: #f59e0b; color: white; }
+        .role-manager { background: #3b82f6; color: white; }
+        .role-staff { background: #64748b; color: white; }
 
-        .perm-admin { background: #ef4444; color: white; }
-        .perm-manager { background: #f59e0b; color: white; }
-        .perm-employee { background: #3b82f6; color: white; }
-        .perm-viewer { background: #10b981; color: white; }
-        .perm-none { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.4); }
+        .status-badge { padding: 2px 6px; border-radius: 4px; font-size: 8px; font-weight: 600; }
+        .status-active { background: #10b981; color: white; }
+        .status-pending { background: #f59e0b; color: white; }
+        .status-resigned { background: #475569; color: white; }
+
+        .perm-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
 
         [v-cloak] { display: none; }
+        .toastify { border-radius: 12px; font-family: 'Inter', sans-serif; }
+
+        .user-row { transition: all 0.2s ease; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+        .user-row.resigned { opacity: 0.4; }
+        .user-row:hover { background: rgba(255, 255, 255, 0.03); }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -84,71 +84,104 @@
         <!-- HEADER -->
         <div class="flex items-center justify-between mb-8">
             <div class="flex items-center space-x-4">
-                <a href="index.html" class="p-3 glass-card hover:bg-white/10 transition-colors">
-                    <i data-lucide="home" class="w-6 h-6 text-orange-500"></i>
+                <a href="index.html" class="p-3 glass-card hover:bg-white/10 transition-colors group" title="Về trang ứng dụng">
+                    <i data-lucide="layout-grid" class="w-6 h-6 text-orange-500 group-hover:scale-110 transition-transform"></i>
                 </a>
                 <div>
                     <h1 class="text-2xl font-bold tracking-tight">Quản trị <span class="text-orange-500">HEM EMM</span></h1>
                     <p class="text-[10px] text-blue-200/40 uppercase tracking-[0.2em]">Hệ thống quản lý tập trung</p>
                 </div>
             </div>
+
+            <button @click="handleLogout" class="p-3 glass-card hover:bg-red-500/20 text-blue-300/50 hover:text-red-500 transition-colors" title="Đăng xuất">
+                <i data-lucide="log-out" class="w-5 h-5"></i>
+            </button>
         </div>
 
         <!-- TAB NAVIGATION -->
         <div class="flex space-x-2 mb-8 p-1.5 glass-card inline-flex">
             <button @click="activeTab = 'users'" :class="['tab-btn', activeTab === 'users' ? 'active' : 'text-white/50 hover:text-white']">
-                NHÂN SỰ
+                QUẢN LÝ TÀI KHOẢN
             </button>
             <button @click="activeTab = 'org'" :class="['tab-btn', activeTab === 'org' ? 'active' : 'text-white/50 hover:text-white']">
                 SƠ ĐỒ TỔ CHỨC
             </button>
         </div>
 
-        <!-- TAB 1: QUẢN LÝ NHÂN SỰ -->
+        <!-- TAB 1: QUẢN LÝ TÀI KHOẢN -->
         <div v-if="activeTab === 'users'" class="space-y-6">
-            <!-- Search & Filter -->
-            <div class="glass-card p-4 flex flex-col md:flex-row gap-4">
-                <div class="relative flex-1">
-                    <i data-lucide="search" class="absolute left-4 top-3 w-5 h-5 text-white/30"></i>
-                    <input type="text" v-model="searchQuery" placeholder="Tìm tên, mã NV hoặc email..." class="glass-input pl-12">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="flex flex-1 gap-4 w-full">
+                    <div class="relative flex-1">
+                        <i data-lucide="search" class="absolute left-4 top-3 w-4 h-4 text-white/30"></i>
+                        <input type="text" v-model="searchQuery" placeholder="Tìm tên, mã NV, email hoặc chức danh..." class="glass-input pl-10">
+                    </div>
+                    <select v-model="filterDept" class="glass-input md:w-56 text-white bg-slate-800">
+                        <option value="">Tất cả phòng ban</option>
+                        <option v-for="d in departments" :key="d.id" :value="d.id">{{ d.name }}</option>
+                    </select>
                 </div>
-                <select v-model="filterDept" class="glass-input md:w-48 bg-slate-800">
-                    <option value="">Tất cả phòng ban</option>
-                    <option v-for="d in departments" :key="d.id" :value="d.id">{{ d.name }}</option>
-                </select>
+                <button @click="openUserModal()" class="bg-orange-500 px-6 py-3 rounded-2xl font-bold text-xs flex items-center shadow-lg shadow-orange-500/20 whitespace-nowrap hover:scale-105 transition-transform w-full md:w-auto justify-center text-white">
+                    <i data-lucide="user-plus" class="w-4 h-4 mr-2"></i> THÊM NHÂN VIÊN
+                </button>
             </div>
 
-            <!-- User List -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div v-for="user in filteredUsers" :key="user.id" class="glass-card p-5 group hover:border-orange-500/30 transition-all">
-                    <div class="flex items-start justify-between mb-4">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-12 h-12 rounded-2xl bg-orange-500 flex items-center justify-center text-xl font-bold overflow-hidden shadow-inner">
-                                <img v-if="user.avatar_url" :src="user.avatar_url" class="w-full h-full object-cover">
-                                <span v-else>{{ getInitial(user.full_name) }}</span>
-                            </div>
-                            <div>
-                                <h3 class="font-bold text-sm">{{ user.full_name }}</h3>
-                                <p class="text-[10px] text-orange-500 font-mono">{{ user.employee_code }}</p>
-                            </div>
-                        </div>
-                        <button @click="openUserModal(user)" class="p-2 bg-white/5 rounded-xl hover:bg-orange-500 transition-colors">
-                            <i data-lucide="edit-3" class="w-4 h-4"></i>
-                        </button>
-                    </div>
-
-                    <div class="text-[10px] text-white/40 space-y-2 mb-4">
-                        <div class="flex items-center"><i data-lucide="briefcase" class="w-3 h-3 mr-2"></i> {{ user.departments?.name || 'Chưa xếp phòng' }}</div>
-                        <div class="flex items-center"><i data-lucide="mail" class="w-3 h-3 mr-2"></i> {{ user.company_email }}</div>
-                    </div>
-
-                    <!-- App Permissions Summary -->
-                    <div class="flex flex-wrap gap-1.5 pt-3 border-t border-white/5">
-                        <div v-for="(perm, app) in user.app_permissions" :key="app" class="flex flex-col items-center">
-                            <span class="text-[8px] uppercase text-white/30 mb-1">{{ app }}</span>
-                            <span :class="['perm-badge', 'perm-' + perm]">{{ perm }}</span>
-                        </div>
-                    </div>
+            <div class="glass-card overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-white/5 text-white/40 uppercase tracking-widest font-bold">
+                            <tr>
+                                <th class="px-6 py-4">Nhân sự & Chức danh</th>
+                                <th class="px-6 py-4 text-center">Vai trò</th>
+                                <th class="px-6 py-4 text-center">Trạng thái</th>
+                                <th class="px-6 py-4 text-center hidden lg:table-cell">Quyền Apps</th>
+                                <th class="px-6 py-4 text-right">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-white/5 text-white">
+                            <tr v-for="user in filteredUsers" :key="user.id" :class="['user-row', user.status]">
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-10 h-10 rounded-xl bg-orange-500 flex-shrink-0 flex items-center justify-center font-bold text-sm overflow-hidden shadow-inner">
+                                            <img v-if="user.avatar_url" :src="user.avatar_url" class="w-full h-full object-cover">
+                                            <span v-else>{{ getInitial(user.full_name) }}</span>
+                                        </div>
+                                        <div>
+                                            <p class="font-bold">{{ user.full_name }} <span class="text-orange-400 font-mono text-[10px]">({{ user.employee_code || '---' }})</span></p>
+                                            <p class="text-[10px] text-blue-200/60 uppercase">{{ user.job_title || 'Chưa cập nhật' }} • {{ user.departments?.name || 'Văn phòng' }}</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    <span :class="['role-badge', 'role-' + user.role]">{{ user.role }}</span>
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    <div class="flex flex-col items-center gap-1">
+                                        <span v-if="user.status === 'resigned'" class="status-badge status-resigned">NGHỈ VIỆC</span>
+                                        <span v-else-if="user.is_claimed" class="status-badge status-active">ĐÃ KÍCH HOẠT</span>
+                                        <span v-else class="status-badge status-pending">CHỜ KÍCH HOẠT</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 text-center hidden lg:table-cell">
+                                    <div class="flex justify-center gap-1.5" v-if="user.app_permissions">
+                                        <div v-for="(perm, app) in user.app_permissions" :key="app" 
+                                             class="w-2 h-2 rounded-full" 
+                                             :class="perm !== 'none' ? 'bg-green-500' : 'bg-white/10'"
+                                             :title="app + ': ' + perm">
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 text-right space-x-2">
+                                    <button @click="openUserModal(user)" class="p-2 bg-white/5 rounded-lg hover:bg-orange-500 transition-colors">
+                                        <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                                    </button>
+                                    <button v-if="!user.is_claimed" @click="handleHardDelete(user)" class="p-2 bg-white/5 rounded-lg hover:bg-red-600 transition-colors text-red-400 hover:text-white" title="Xóa hồ sơ">
+                                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -156,40 +189,26 @@
         <!-- TAB 2: QUẢN LÝ SƠ ĐỒ TỔ CHỨC -->
         <div v-if="activeTab === 'org'" class="space-y-6">
             <div class="flex justify-end">
-                <button @click="openDeptModal()" class="bg-orange-500 px-6 py-3 rounded-2xl font-bold text-sm flex items-center shadow-lg shadow-orange-500/20">
+                <button @click="openDeptModal()" class="bg-orange-500 px-6 py-3 rounded-2xl font-bold text-xs flex items-center shadow-lg shadow-orange-500/20 text-white">
                     <i data-lucide="plus-circle" class="w-4 h-4 mr-2"></i> THÊM PHÒNG BAN
                 </button>
             </div>
-
             <div class="glass-card overflow-hidden">
-                <table class="w-full text-left text-sm">
-                    <thead class="bg-white/5 text-white/40 text-[10px] uppercase tracking-widest">
+                <table class="w-full text-left text-xs text-white">
+                    <thead class="bg-white/5 text-white/40 uppercase tracking-widest font-bold">
                         <tr>
                             <th class="px-6 py-4">Mã / Tên phòng ban</th>
                             <th class="px-6 py-4">Phòng ban cha</th>
-                            <th class="px-6 py-4">Phụ trách cao nhất</th>
+                            <th class="px-6 py-4">Phụ trách</th>
                             <th class="px-6 py-4 text-right">Thao tác</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-white/5">
-                        <tr v-for="dept in departments" :key="dept.id" class="hover:bg-white/5 transition-colors">
-                            <td class="px-6 py-4">
-                                <p class="font-bold text-orange-500">{{ dept.dep_code }}</p>
-                                <p class="text-xs">{{ dept.name }}</p>
-                            </td>
-                            <td class="px-6 py-4 text-xs text-white/60">
-                                {{ getDeptName(dept.parent_id) }}
-                            </td>
-                            <td class="px-6 py-4">
-                                <div v-if="dept.manager_id" class="flex items-center space-x-2">
-                                    <div class="w-6 h-6 rounded-lg bg-blue-500 flex items-center justify-center text-[10px] font-bold">
-                                        {{ getInitial(getUserName(dept.manager_id)) }}
-                                    </div>
-                                    <span class="text-xs">{{ getUserName(dept.manager_id) }}</span>
-                                </div>
-                                <span v-else class="text-white/20 italic text-xs">Chưa chỉ định</span>
-                            </td>
-                            <td class="px-6 py-4 text-right">
+                        <tr v-for="dept in departments" :key="dept.id" class="user-row">
+                            <td class="px-6 py-4 font-bold text-orange-500">{{ dept.dep_code }} <br><span class="text-white text-[10px]">{{ dept.name }}</span></td>
+                            <td class="px-6 py-4 text-white/40">{{ getDeptName(dept.parent_id) || '---' }}</td>
+                            <td class="px-6 py-4">{{ getUserName(dept.manager_id) || 'Chưa chỉ định' }}</td>
+                            <td class="px-6 py-4 text-right space-x-2">
                                 <button @click="openDeptModal(dept)" class="p-2 hover:text-orange-500"><i data-lucide="edit" class="w-4 h-4"></i></button>
                                 <button @click="deleteDept(dept.id)" class="p-2 hover:text-red-500"><i data-lucide="trash" class="w-4 h-4"></i></button>
                             </td>
@@ -199,109 +218,69 @@
             </div>
         </div>
 
-        <!-- MODAL: CHỈNH SỬA NHÂN SỰ & PHÂN QUYỀN JSONB -->
-        <div v-if="showUserModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-            <div class="glass-card w-full max-w-2xl p-8 relative max-h-[90vh] overflow-y-auto">
+        <!-- MODAL GỘP: THIẾT LẬP NHÂN SỰ -->
+        <div v-if="showUserModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
+            <div class="glass-card w-full max-w-3xl p-8 relative max-h-[90vh] overflow-y-auto border-orange-500/20">
                 <button @click="showUserModal = false" class="absolute top-6 right-6 text-white/50"><i data-lucide="x" class="w-6 h-6"></i></button>
-                <h2 class="text-xl font-bold mb-8 text-orange-500">Thiết lập hồ sơ & Phân quyền</h2>
+                <h2 class="text-xl font-bold mb-8 text-orange-500">{{ userForm.id ? 'Cập nhật hồ sơ' : 'Thêm hồ sơ nhân sự mới' }}</h2>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Thông tin cơ bản -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-white">
+                    <!-- CỘT 1: THÔNG TIN -->
                     <div class="space-y-4">
-                        <p class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Thông tin cơ bản</p>
-                        <div>
-                            <label class="text-xs text-white/50 mb-1 block">Họ và tên</label>
-                            <input type="text" v-model="userForm.full_name" class="glass-input">
+                        <p class="text-[10px] font-bold text-white/30 uppercase tracking-widest mb-4">Thông tin cơ bản</p>
+                        <div><label class="text-[10px] text-white/50 mb-1 block uppercase">Họ và tên *</label><input type="text" v-model="userForm.full_name" class="glass-input"></div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div><label class="text-[10px] text-white/50 mb-1 block uppercase">Mã nhân viên</label><input type="text" v-model="userForm.employee_code" class="glass-input"></div>
+                            <div><label class="text-[10px] text-white/50 mb-1 block uppercase">Chức danh *</label><input type="text" v-model="userForm.job_title" class="glass-input"></div>
                         </div>
-                        <div>
-                            <label class="text-xs text-white/50 mb-1 block">Mã nhân viên</label>
-                            <input type="text" v-model="userForm.employee_code" class="glass-input">
+                        <div><label class="text-[10px] text-white/50 mb-1 block uppercase">Email công việc *</label><input type="email" v-model="userForm.company_email" class="glass-input" :disabled="userForm.is_claimed"></div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div><label class="text-[10px] text-white/50 mb-1 block uppercase">Email cá nhân</label><input type="email" v-model="userForm.personal_email" class="glass-input"></div>
+                            <div><label class="text-[10px] text-white/50 mb-1 block uppercase">Số điện thoại</label><input type="text" v-model="userForm.phone_number" class="glass-input"></div>
                         </div>
-                        <div>
-                            <label class="text-xs text-white/50 mb-1 block">Phòng ban</label>
-                            <select v-model="userForm.department_id" class="glass-input bg-slate-800">
-                                <option v-for="d in departments" :key="d.id" :value="d.id">{{ d.name }}</option>
-                            </select>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div><label class="text-[10px] text-white/50 mb-1 block uppercase">Phòng ban</label><select v-model="userForm.department_id" class="glass-input bg-slate-800"><option v-for="d in departments" :key="d.id" :value="d.id">{{ d.name }}</option></select></div>
+                            <div><label class="text-[10px] text-white/50 mb-1 block uppercase">Vai trò hệ thống</label><select v-model="userForm.role" class="glass-input bg-slate-800"><option v-for="r in roleList" :key="r" :value="r">{{ r.toUpperCase() }}</option></select></div>
                         </div>
-                        <div>
-                            <label class="text-xs text-white/50 mb-1 block">Trạng thái</label>
-                            <select v-model="userForm.status" class="glass-input bg-slate-800">
-                                <option value="working">Đang làm việc</option>
-                                <option value="resigned">Đã nghỉ việc</option>
-                            </select>
-                        </div>
+                        <div><label class="text-[10px] text-white/50 mb-1 block uppercase">Quản lý trực tiếp</label><select v-model="userForm.direct_manager_id" class="glass-input bg-slate-800"><option :value="null">-- Không có --</option><option v-for="u in users" :key="u.id" :value="u.id" v-show="u.id !== userForm.id">{{ u.full_name }}</option></select></div>
                     </div>
 
-                    <!-- Phân quyền JSONB -->
+                    <!-- CỘT 2: PHÂN QUYỀN -->
                     <div class="space-y-4">
-                        <p class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Quyền hạn ứng dụng (JSONB)</p>
-                        <div class="bg-white/5 rounded-2xl p-4 space-y-4">
-                            <div v-for="app in appList" :key="app" class="flex items-center justify-between">
-                                <span class="text-xs font-bold uppercase text-blue-300">{{ app }}</span>
-                                <select v-model="userForm.app_permissions[app]" class="bg-transparent border-b border-white/10 text-[10px] focus:outline-none text-orange-500 font-bold">
-                                    <option value="admin">ADMIN</option>
-                                    <option value="manager">MANAGER</option>
-                                    <option value="employee">EMPLOYEE</option>
-                                    <option value="viewer">VIEWER</option>
-                                    <option value="none">NONE</option>
+                        <p class="text-[10px] font-bold text-white/30 uppercase tracking-widest mb-4">Phân quyền 5 Apps</p>
+                        <div class="bg-white/5 rounded-2xl p-4 space-y-4 border border-white/5">
+                            <div v-for="(options, app) in appOptions" :key="app" class="flex items-center justify-between">
+                                <span class="text-[10px] font-bold uppercase text-blue-300">{{ app === 'tailieu' ? 'Tài liệu' : app }}</span>
+                                <select v-model="userForm.app_permissions[app]" class="bg-slate-800 border border-white/10 rounded-lg px-2 py-1 text-[10px] text-orange-400 font-bold focus:outline-none" :disabled="userForm.status === 'resigned'">
+                                    <option v-for="opt in options" :key="opt" :value="opt">{{ opt.toUpperCase() }}</option>
                                 </select>
                             </div>
                         </div>
-                        <div>
-                            <label class="text-xs text-white/50 mb-1 block">Quyền hệ thống (Role)</label>
-                            <select v-model="userForm.role" class="glass-input bg-slate-800">
-                                <option value="admin">System Admin</option>
-                                <option value="hr_admin">HR Admin</option>
-                                <option value="employee">User</option>
-                            </select>
-                        </div>
+                        <div><label class="text-[10px] text-white/50 mb-1 block uppercase">Trạng thái nhân sự</label><select v-model="userForm.status" class="glass-input bg-slate-800 text-[10px] font-bold"><option value="working">ĐANG LÀM VIỆC</option><option value="resigned">ĐÃ NGHỈ VIỆC</option></select></div>
                     </div>
                 </div>
 
                 <div class="mt-10 flex gap-4">
-                    <button @click="showUserModal = false" class="flex-1 py-4 bg-white/5 rounded-2xl font-bold text-sm">HỦY</button>
-                    <button @click="saveUser" :disabled="saving" class="flex-1 py-4 bg-orange-500 rounded-2xl font-bold text-sm shadow-lg shadow-orange-500/20">
-                        {{ saving ? 'ĐANG LƯU...' : 'CẬP NHẬT HỒ SƠ' }}
+                    <button @click="showUserModal = false" class="flex-1 py-4 bg-white/5 rounded-2xl font-bold text-xs uppercase">Hủy bỏ</button>
+                    <button @click="saveUser" :disabled="saving" class="flex-1 py-4 bg-orange-500 rounded-2xl font-bold text-xs shadow-lg shadow-orange-500/20 uppercase text-white">
+                        {{ saving ? 'Đang xử lý...' : 'XÁC NHẬN LƯU' }}
                     </button>
                 </div>
             </div>
         </div>
 
-        <!-- MODAL: PHÒNG BAN -->
+        <!-- MODAL PHÒNG BAN -->
         <div v-if="showDeptModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-            <div class="glass-card w-full max-w-md p-8 relative">
+            <div class="glass-card w-full max-w-md p-8 relative text-white">
                 <button @click="showDeptModal = false" class="absolute top-6 right-6 text-white/50"><i data-lucide="x" class="w-6 h-6"></i></button>
                 <h2 class="text-xl font-bold mb-8 text-orange-500">{{ deptForm.id ? 'Sửa phòng ban' : 'Thêm phòng ban mới' }}</h2>
-
                 <div class="space-y-5">
-                    <div>
-                        <label class="text-xs text-white/50 mb-1 block">Mã phòng ban (VD: IT_DEPT)</label>
-                        <input type="text" v-model="deptForm.dep_code" class="glass-input">
-                    </div>
-                    <div>
-                        <label class="text-xs text-white/50 mb-1 block">Tên phòng ban</label>
-                        <input type="text" v-model="deptForm.name" class="glass-input">
-                    </div>
-                    <div>
-                        <label class="text-xs text-white/50 mb-1 block">Phòng ban cấp trên</label>
-                        <select v-model="deptForm.parent_id" class="glass-input bg-slate-800">
-                            <option :value="null">-- Là cấp cao nhất --</option>
-                            <option v-for="d in departments" :key="d.id" :value="d.id" v-show="d.id !== deptForm.id">{{ d.name }}</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="text-xs text-white/50 mb-1 block">Trưởng phòng</label>
-                        <select v-model="deptForm.manager_id" class="glass-input bg-slate-800">
-                            <option :value="null">-- Chưa chỉ định --</option>
-                            <option v-for="u in users" :key="u.id" :value="u.id">{{ u.full_name }} ({{ u.employee_code }})</option>
-                        </select>
-                    </div>
+                    <div><label class="text-[10px] text-white/40 uppercase mb-1 block">Mã phòng ban</label><input type="text" v-model="deptForm.dep_code" class="glass-input"></div>
+                    <div><label class="text-[10px] text-white/40 uppercase mb-1 block">Tên phòng ban</label><input type="text" v-model="deptForm.name" class="glass-input"></div>
+                    <div><label class="text-[10px] text-white/40 uppercase mb-1 block">Cấp trên</label><select v-model="deptForm.parent_id" class="glass-input bg-slate-800"><option :value="null">-- Cao nhất --</option><option v-for="d in departments" :key="d.id" :value="d.id" v-show="d.id !== deptForm.id">{{ d.name }}</option></select></div>
+                    <div><label class="text-[10px] text-white/40 uppercase mb-1 block">Trưởng phòng</label><select v-model="deptForm.manager_id" class="glass-input bg-slate-800"><option :value="null">-- Chưa có --</option><option v-for="u in users" :key="u.id" :value="u.id">{{ u.full_name }}</option></select></div>
                 </div>
-
-                <div class="mt-10 flex gap-4">
-                    <button @click="showDeptModal = false" class="flex-1 py-4 bg-white/5 rounded-2xl font-bold text-sm">HỦY</button>
-                    <button @click="saveDept" :disabled="saving" class="flex-1 py-4 bg-orange-500 rounded-2xl font-bold text-sm">LƯU THÔNG TIN</button>
-                </div>
+                <div class="mt-10 flex gap-4"><button @click="showDeptModal = false" class="flex-1 py-4 bg-white/5 rounded-2xl font-bold text-xs uppercase">Hủy</button><button @click="saveDept" :disabled="saving" class="flex-1 py-4 bg-orange-500 rounded-2xl font-bold text-xs text-white">Lưu thông tin</button></div>
             </div>
         </div>
 
@@ -310,9 +289,15 @@
     <script>
         const { createApp, ref, onMounted, computed, nextTick, watch } = Vue;
 
-        const SUPABASE_URL = 'https://dcqpxiwhekjowhaspnsm.supabase.co'; 
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRjcXB4aXdoZWtqb3doYXNwbnNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1NjMzMDcsImV4cCI6MjEwMDEzOTMwN30.kUvD5QEs1hjxtTyUr9psrijbs4R-LFKA6ufgjqvRGvE'; 
+        const SUPABASE_URL = 'https://gjwvhtxkpgwdccizynes.supabase.co'; 
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdqd3ZodHhrcGd3ZGNjaXp5bmVzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2MTY3NzYsImV4cCI6MjEwMDE5Mjc3Nn0.J5rE5-LpLdMjipkKk37PQAAJtEDjV5KCqEQAljIp2UE'; 
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        function notify(msg, type = 'success') {
+            Toastify({ text: msg, duration: 3000, gravity: "top", position: "right",
+                style: { background: type === 'success' ? "linear-gradient(to right, #10b981, #059669)" : "linear-gradient(to right, #ef4444, #dc2626)" }
+            }).showToast();
+        }
 
         createApp({
             setup() {
@@ -321,111 +306,95 @@
                 const departments = ref([]);
                 const searchQuery = ref('');
                 const filterDept = ref('');
-                const filterRole = ref('');
+                const currentUserId = ref('');
                 const showUserModal = ref(false);
                 const showDeptModal = ref(false);
                 const saving = ref(false);
+                
                 const userForm = ref({});
-                const deptForm = ref({});
-                const appList = ['lichhop', 'taisan', 'chamcong', 'tracuu', 'sanxuat'];
+                const deptForm = ref({ dep_code: '', name: '', parent_id: null, manager_id: null });
+                const roleList = ['staff', 'manager', 'hr_admin', 'director', 'admin'];
+                const appOptions = {
+                    lichhop: ['admin', 'manager', 'staff', 'none'],
+                    taisan: ['admin', 'asset_manager', 'asset_auditor', 'staff', 'none'],
+                    chamcong: ['admin', 'hr_admin', 'clerk', 'staff', 'none'],
+                    tracuu: ['admin', 'accountant', 'inventory', 'sale', 'engineer', 'staff', 'none'],
+                    tailieu: ['admin', 'manager', 'clerk', 'staff', 'none']
+                };
 
                 onMounted(async () => {
                     const { data: { session } } = await supabaseClient.auth.getSession();
                     if (!session) return window.location.href = 'index.html';
-                    
-                    const { data: profile } = await supabaseClient.from('profiles').select('role').eq('id', session.user.id).single();
-                    if (profile.role !== 'admin') {
-                        alert("Quyền truy cập bị từ chối!");
-                        window.location.href = 'index.html';
-                        return;
-                    }
+                    currentUserId.value = session.user.id;
+                    if (session.user.app_metadata.role !== 'admin') { window.location.href = 'index.html'; return; }
                     fetchData();
                 });
 
                 async function fetchData() {
                     const [uRes, dRes] = await Promise.all([
-                        supabaseClient.from('profiles').select('*, departments(name)').order('full_name'),
+                        supabaseClient.from('profiles').select('*, departments!profiles_department_id_fkey(name)').order('full_name'),
                         supabaseClient.from('departments').select('*').order('name')
                     ]);
-                    users.value = uRes.data || [];
+                    users.value = (uRes.data || []).map(u => ({ ...u, is_claimed: u.created_at !== u.updated_at }));
                     departments.value = dRes.data || [];
                     refreshIcons();
                 }
 
                 const filteredUsers = computed(() => {
                     return users.value.filter(u => {
-                        const matchSearch = !searchQuery.value || u.full_name.toLowerCase().includes(searchQuery.value.toLowerCase()) || u.employee_code.toLowerCase().includes(searchQuery.value.toLowerCase());
+                        const s = searchQuery.value.toLowerCase();
+                        const matchSearch = !s || (u.full_name || '').toLowerCase().includes(s) || (u.employee_code || '').toLowerCase().includes(s) || (u.company_email || '').toLowerCase().includes(s) || (u.job_title || '').toLowerCase().includes(s);
                         const matchDept = !filterDept.value || u.department_id === filterDept.value;
                         return matchSearch && matchDept;
                     });
                 });
 
-                function getInitial(name) {
-                    if (!name) return 'H';
-                    const words = name.trim().split(' ');
-                    return words[words.length - 1].charAt(0).toUpperCase();
-                }
+                const getInitial = (name) => name ? name.trim().split(' ').pop().charAt(0).toUpperCase() : 'H';
+                const getUserName = (id) => users.value.find(u => u.id === id)?.full_name || '';
+                const getDeptName = (id) => departments.value.find(d => d.id === id)?.name || '';
 
-                function getUserName(id) { return users.value.find(u => u.id === id)?.full_name || ''; }
-                function getDeptName(id) { return departments.value.find(d => d.id === id)?.name || ''; }
-
-                function openUserModal(user) {
-                    userForm.value = JSON.parse(JSON.stringify(user));
-                    // Khởi tạo JSONB nếu chưa có
-                    if (!userForm.value.app_permissions) userForm.value.app_permissions = {};
-                    appList.forEach(app => {
-                        if (!userForm.value.app_permissions[app]) userForm.value.app_permissions[app] = 'none';
-                    });
+                function openUserModal(user = null) {
+                    if (user) userForm.value = JSON.parse(JSON.stringify(user));
+                    else userForm.value = { full_name: '', employee_code: '', company_email: '', personal_email: '', phone_number: '', job_title: '', department_id: null, direct_manager_id: null, role: 'staff', status: 'working', app_permissions: { lichhop: 'staff', taisan: 'staff', chamcong: 'staff', tracuu: 'staff', tailieu: 'staff' } };
                     showUserModal.value = true;
                     refreshIcons();
                 }
 
                 async function saveUser() {
+                    if (!userForm.value.full_name || !userForm.value.company_email || !userForm.value.job_title) return notify("Vui lòng điền đủ Tên, Email, Chức danh!", "error");
                     saving.value = true;
-                    const { error } = await supabaseClient.from('profiles').update({
-                        full_name: userForm.value.full_name,
-                        employee_code: userForm.value.employee_code,
-                        department_id: userForm.value.department_id,
-                        status: userForm.value.status,
-                        role: userForm.value.role,
-                        app_permissions: userForm.value.app_permissions
-                    }).eq('id', userForm.value.id);
                     
-                    if (error) alert(error.message);
-                    else { showUserModal.value = false; fetchData(); }
+                    if (userForm.value.status === 'resigned' && userForm.value.is_claimed) {
+                        await supabaseClient.rpc('admin_manage_user_status', { target_user_id: userForm.value.id, action_type: 'RESIGN' });
+                    }
+
+                    let error;
+                    if (userForm.value.id) error = (await supabaseClient.from('profiles').update(userForm.value).eq('id', userForm.value.id)).error;
+                    else error = (await supabaseClient.from('profiles').insert([{ ...userForm.value, id: crypto.randomUUID() }])).error;
+                    
+                    if (error) notify(error.message, "error");
+                    else { notify("Lưu hồ sơ thành công"); showUserModal.value = false; fetchData(); }
                     saving.value = false;
                 }
 
-                function openDeptModal(dept = null) {
-                    deptForm.value = dept ? JSON.parse(JSON.stringify(dept)) : { dep_code: '', name: '', parent_id: null, manager_id: null };
-                    showDeptModal.value = true;
-                    refreshIcons();
-                }
-
-                async function saveDept() {
-                    saving.value = true;
-                    const { error } = await supabaseClient.from('departments').upsert(deptForm.value);
-                    if (error) alert(error.message);
-                    else { showDeptModal.value = false; fetchData(); }
-                    saving.value = false;
-                }
-
-                async function deleteDept(id) {
-                    if (confirm("Xóa phòng ban này có thể ảnh hưởng đến sơ đồ tổ chức. Bạn chắc chứ?")) {
-                        const { error } = await supabaseClient.from('departments').delete().eq('id', id);
-                        if (error) alert("Không thể xóa phòng ban đang có ràng buộc dữ liệu!");
-                        else fetchData();
+                async function handleHardDelete(user) {
+                    if (confirm(`Xóa vĩnh viễn hồ sơ [${user.full_name}] khỏi hệ thống?`)) {
+                        saving.value = true;
+                        const { error } = await supabaseClient.rpc('admin_manage_user_status', { target_user_id: user.id, action_type: 'DELETE' });
+                        if (error) notify(error.message, "error"); else fetchData();
+                        saving.value = false;
                     }
                 }
 
-                function refreshIcons() { nextTick(() => { if (window.lucide) lucide.createIcons(); }); }
+                function openDeptModal(dept = null) { deptForm.value = dept ? JSON.parse(JSON.stringify(dept)) : { dep_code: '', name: '', parent_id: null, manager_id: null }; showDeptModal.value = true; refreshIcons(); }
+                async function saveDept() { saving.value = true; const { error } = await supabaseClient.from('departments').upsert(deptForm.value); if (error) notify(error.message, "error"); else { showDeptModal.value = false; fetchData(); } saving.value = false; }
+                async function deleteDept(id) { if (confirm("Xóa phòng ban?")) { const { error } = await supabaseClient.from('departments').delete().eq('id', id); if (error) notify("Lỗi ràng buộc!", "error"); else fetchData(); } }
+
+                const handleLogout = async () => { await supabaseClient.auth.signOut(); window.location.href = 'index.html'; };
+                const refreshIcons = () => nextTick(() => { if (window.lucide) lucide.createIcons(); });
                 watch([activeTab, showUserModal, showDeptModal], () => refreshIcons());
 
-                return {
-                    activeTab, users, departments, searchQuery, filterDept, filterRole,
-                    showUserModal, showDeptModal, userForm, deptForm, saving, appList, filteredUsers,
-                    getInitial, getUserName, getDeptName, openUserModal, saveUser, openDeptModal, saveDept, deleteDept
-                }
+                return { activeTab, users, departments, searchQuery, filterDept, currentUserId, showUserModal, showDeptModal, userForm, deptForm, saving, roleList, appOptions, filteredUsers, getInitial, getUserName, getDeptName, openUserModal, saveUser, openDeptModal, saveDept, deleteDept, handleHardDelete, handleLogout }
             }
         }).mount('#app');
     </script>
