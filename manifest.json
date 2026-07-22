@@ -1,0 +1,17 @@
+{
+    "name": "Ứng dụng nội bộ HEM EMM",
+    "short_name": "HEMEMM InternalApp",
+    "start_url": "/index.html",
+    "display": "standalone",
+    "background_color": "#0f172a",
+    "theme_color": "#f97316",
+    "description": "Trang đăng nhập chung dành cho các ứng dụng nội bộ của HEM EMM",
+    "icons": [
+        {
+            "src": "/images/logo.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        }
+    ]
+}

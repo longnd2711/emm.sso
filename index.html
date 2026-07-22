@@ -6,29 +6,100 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HEM EMM - Hệ thống ứng dụng</title>
 
+    <!-- Liên kết file manifest -->
+    <link rel="manifest" href="/manifest.json">
+
+    <!-- Thiết lập màu thanh trạng thái (theme color) cho mobile -->
+    <meta name="theme-color" content="#0f172a">
+
+    <!-- Dành riêng cho iOS/Safari (vì Safari hỗ trợ PWA hơi khác một chút) -->
+    <link rel="apple-touch-icon" href="/images/logo.svg">
+
     <!-- Thư viện CDN (Giữ nguyên gốc) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    
+
     <!-- Toastify JS CSS (Giữ nguyên gốc) -->
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; margin: 0; padding: 15px; }
-        .glass-container { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 2.5rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); width: 100%; max-width: 400px; padding: 2.5rem 1.5rem; color: white; }
-        .glass-input { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.1); color: white; transition: all 0.3s ease; }
-        .glass-input:focus { background: rgba(255, 255, 255, 0.12); border-color: #f97316; outline: none; box-shadow: 0 0 15px rgba(249, 115, 22, 0.3); }
-        .btn-orange { background: linear-gradient(90deg, #f97316 0%, #ea580c 100%); box-shadow: 0 4px 15px rgba(234, 88, 12, 0.4); }
-        .btn-orange:disabled { opacity: 0.6; cursor: not-allowed; }
-        .app-row { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); transition: all 0.2s ease; }
-        .app-row:active { background: rgba(255, 255, 255, 0.1); transform: scale(0.98); }
-        .modal-overlay { background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(8px); }
-        [v-cloak] { display: none; }
-        .toastify { border-radius: 12px; font-family: 'Inter', sans-serif; font-size: 14px; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 15px;
+        }
+
+        .glass-container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 2.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 400px;
+            padding: 2.5rem 1.5rem;
+            color: white;
+        }
+
+        .glass-input {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .glass-input:focus {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: #f97316;
+            outline: none;
+            box-shadow: 0 0 15px rgba(249, 115, 22, 0.3);
+        }
+
+        .btn-orange {
+            background: linear-gradient(90deg, #f97316 0%, #ea580c 100%);
+            box-shadow: 0 4px 15px rgba(234, 88, 12, 0.4);
+        }
+
+        .btn-orange:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .app-row {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.2s ease;
+        }
+
+        .app-row:active {
+            background: rgba(255, 255, 255, 0.1);
+            transform: scale(0.98);
+        }
+
+        .modal-overlay {
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+        }
+
+        [v-cloak] {
+            display: none;
+        }
+
+        .toastify {
+            border-radius: 12px;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+        }
     </style>
 </head>
 
@@ -38,58 +109,84 @@
 
         <!-- HEADER -->
         <div class="text-center mb-8">
-            <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-orange-500 mb-4 shadow-lg shadow-orange-500/30">
+            <div
+                class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-orange-500 mb-4 shadow-lg shadow-orange-500/30">
                 <i data-lucide="shield-check" class="w-8 h-8 text-white"></i>
             </div>
             <h1 class="text-2xl font-bold tracking-tight text-white">HEM <span class="text-orange-500">EMM</span></h1>
-            <p class="text-[10px] text-blue-200/60 uppercase tracking-widest mt-1 font-medium">Hệ thống Ứng dụng Nội bộ</p>
+            <p class="text-[10px] text-blue-200/60 uppercase tracking-widest mt-1 font-medium">Hệ thống Ứng dụng Nội bộ
+            </p>
         </div>
 
         <!-- TRẠNG THÁI: CHƯA ĐĂNG NHẬP -->
         <div v-if="!session" class="space-y-6">
             <div class="flex p-1 bg-white/5 rounded-xl mb-4">
-                <button @click="authMode = 'login'" :class="['flex-1 py-2 text-[10px] font-bold rounded-lg transition-all', authMode === 'login' ? 'bg-orange-500 text-white' : 'text-white/40']">ĐĂNG NHẬP</button>
-                <button @click="authMode = 'signup'" :class="['flex-1 py-2 text-[10px] font-bold rounded-lg transition-all', authMode === 'signup' ? 'bg-orange-500 text-white' : 'text-white/40']">KÍCH HOẠT</button>
+                <button @click="authMode = 'login'"
+                    :class="['flex-1 py-2 text-[10px] font-bold rounded-lg transition-all', authMode === 'login' ? 'bg-orange-500 text-white' : 'text-white/40']">ĐĂNG
+                    NHẬP</button>
+                <button @click="authMode = 'signup'"
+                    :class="['flex-1 py-2 text-[10px] font-bold rounded-lg transition-all', authMode === 'signup' ? 'bg-orange-500 text-white' : 'text-white/40']">KÍCH
+                    HOẠT</button>
             </div>
 
             <div class="space-y-4">
                 <!-- FORM NHẬP EMAIL & PASS -->
                 <div v-if="signupStep === 1" class="space-y-4 animate-in fade-in duration-300">
                     <div class="relative">
-                        <span class="absolute left-4 top-3.5 text-blue-300/50"><i data-lucide="mail" class="w-5 h-5"></i></span>
-                        <input type="email" v-model="email" placeholder="Email nhân viên (@hem.com.vn)" class="glass-input w-full pl-12 pr-4 py-3.5 rounded-2xl text-sm">
+                        <span class="absolute left-4 top-3.5 text-blue-300/50"><i data-lucide="mail"
+                                class="w-5 h-5"></i></span>
+                        <input type="email" v-model="email" placeholder="Email nhân viên (@hem.com.vn)"
+                            class="glass-input w-full pl-12 pr-4 py-3.5 rounded-2xl text-sm">
                     </div>
                     <div class="relative">
-                        <span class="absolute left-4 top-3.5 text-blue-300/50"><i data-lucide="key-round" class="w-5 h-5"></i></span>
-                        <input :type="showPassword ? 'text' : 'password'" v-model="password" placeholder="Mật khẩu" @keyup.enter="handleSubmit" class="glass-input w-full pl-12 pr-12 py-3.5 rounded-2xl text-sm">
-                        <button @click="showPassword = !showPassword" class="absolute right-4 top-3.5 text-blue-300/50 hover:text-orange-400"><i :data-lucide="showPassword ? 'eye-off' : 'eye'" class="w-5 h-5"></i></button>
+                        <span class="absolute left-4 top-3.5 text-blue-300/50"><i data-lucide="key-round"
+                                class="w-5 h-5"></i></span>
+                        <input :type="showPassword ? 'text' : 'password'" v-model="password" placeholder="Mật khẩu"
+                            @keyup.enter="handleSubmit"
+                            class="glass-input w-full pl-12 pr-12 py-3.5 rounded-2xl text-sm">
+                        <button @click="showPassword = !showPassword"
+                            class="absolute right-4 top-3.5 text-blue-300/50 hover:text-orange-400"><i
+                                :data-lucide="showPassword ? 'eye-off' : 'eye'" class="w-5 h-5"></i></button>
                     </div>
                     <!-- Xác nhận mật khẩu (Signup) -->
                     <div v-if="authMode === 'signup'" class="relative animate-in slide-in-from-top-2 duration-200">
-                        <span class="absolute left-4 top-3.5 text-blue-300/50"><i data-lucide="check-check" class="w-5 h-5"></i></span>
-                        <input :type="showPassword ? 'text' : 'password'" v-model="confirmPassword" placeholder="Nhập lại mật khẩu" class="glass-input w-full pl-12 pr-4 py-3.5 rounded-2xl text-sm">
+                        <span class="absolute left-4 top-3.5 text-blue-300/50"><i data-lucide="check-check"
+                                class="w-5 h-5"></i></span>
+                        <input :type="showPassword ? 'text' : 'password'" v-model="confirmPassword"
+                            placeholder="Nhập lại mật khẩu"
+                            class="glass-input w-full pl-12 pr-4 py-3.5 rounded-2xl text-sm">
                     </div>
                 </div>
 
                 <!-- FORM NHẬP OTP -->
                 <div v-if="signupStep === 2" class="space-y-4 animate-in zoom-in duration-300">
                     <div class="text-center px-4">
-                        <p class="text-xs text-orange-200/80 leading-relaxed mb-4">Mã xác thực 6 số đã được gửi tới <b>{{email}}</b></p>
+                        <p class="text-xs text-orange-200/80 leading-relaxed mb-4">Mã xác thực 6 số đã được gửi tới
+                            <b>{{email}}</b>
+                        </p>
                     </div>
                     <div class="relative">
-                        <span class="absolute left-4 top-3.5 text-blue-300/50"><i data-lucide="lock" class="w-5 h-5"></i></span>
-                        <input type="text" v-model="otpToken" placeholder="Mã OTP" maxlength="6" class="glass-input w-full pl-12 pr-4 py-3.5 rounded-2xl text-center text-xl tracking-[0.5em] font-bold">
+                        <span class="absolute left-4 top-3.5 text-blue-300/50"><i data-lucide="lock"
+                                class="w-5 h-5"></i></span>
+                        <input type="text" v-model="otpToken" placeholder="Mã OTP" maxlength="6"
+                            class="glass-input w-full pl-12 pr-4 py-3.5 rounded-2xl text-center text-xl tracking-[0.5em] font-bold">
                     </div>
-                    <button @click="signupStep = 1" class="w-full text-[10px] text-white/30 uppercase font-bold hover:text-white">Thay đổi email</button>
+                    <button @click="signupStep = 1"
+                        class="w-full text-[10px] text-white/30 uppercase font-bold hover:text-white">Thay đổi
+                        email</button>
                 </div>
 
-                <button @click="handleSubmit" :disabled="loading" class="btn-orange w-full py-4 rounded-2xl font-bold text-white shadow-lg flex items-center justify-center">
+                <button @click="handleSubmit" :disabled="loading"
+                    class="btn-orange w-full py-4 rounded-2xl font-bold text-white shadow-lg flex items-center justify-center">
                     <span v-if="loading" class="animate-spin mr-2">◌</span>
-                    <span class="uppercase tracking-widest text-xs">{{ loading ? 'ĐANG XỬ LÝ...' : (signupStep === 2 ? 'XÁC NHẬN OTP' : (authMode === 'login' ? 'ĐĂNG NHẬP' : 'NHẬN MÃ XÁC THỰC')) }}</span>
+                    <span class="uppercase tracking-widest text-xs">{{ loading ? 'ĐANG XỬ LÝ...' : (signupStep === 2 ?
+                        'XÁC NHẬN OTP' : (authMode === 'login' ? 'ĐĂNG NHẬP' : 'NHẬN MÃ XÁC THỰC')) }}</span>
                 </button>
 
                 <div v-if="authMode === 'login'" class="text-center">
-                    <button @click="handleForgotPassword" class="text-[10px] text-blue-200/40 hover:text-orange-400 transition-colors uppercase font-bold tracking-tighter">Quên mật khẩu?</button>
+                    <button @click="handleForgotPassword"
+                        class="text-[10px] text-blue-200/40 hover:text-orange-400 transition-colors uppercase font-bold tracking-tighter">Quên
+                        mật khẩu?</button>
                 </div>
             </div>
         </div>
@@ -98,76 +195,108 @@
         <div v-else class="space-y-4">
             <div class="bg-white/5 border border-white/10 p-3 rounded-2xl flex items-center justify-between">
                 <div class="flex items-center space-x-3 cursor-pointer" @click="openProfileModal">
-                    <div class="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center text-lg font-bold shadow-inner overflow-hidden relative border border-white/10">
+                    <div
+                        class="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center text-lg font-bold shadow-inner overflow-hidden relative border border-white/10">
                         <img v-if="profile?.avatar_url" :src="profile.avatar_url" class="w-full h-full object-cover">
                         <span v-else>{{ userInitial }}</span>
                     </div>
                     <div>
-                        <p class="text-[9px] text-blue-200/50 uppercase font-bold tracking-tighter">{{ profile?.job_title || 'Nhân sự HEM' }}</p>
-                        <p class="text-sm font-semibold text-white truncate w-32">{{ profile?.full_name || 'Nhân viên' }}</p>
+                        <p class="text-[9px] text-blue-200/50 uppercase font-bold tracking-tighter">{{
+                            profile?.job_title || 'Nhân sự HEM' }}</p>
+                        <p class="text-sm font-semibold text-white truncate w-32">{{ profile?.full_name || 'Nhân viên'
+                            }}</p>
                     </div>
                 </div>
-                <button @click="handleLogout" class="p-2 text-blue-300/50 hover:text-red-400 transition-all"><i data-lucide="log-out" class="w-5 h-5"></i></button>
+                <button @click="handleLogout" class="p-2 text-blue-300/50 hover:text-red-400 transition-all"><i
+                        data-lucide="log-out" class="w-5 h-5"></i></button>
             </div>
 
             <div class="space-y-2.5">
-                <div v-for="app in apps" :key="app.name" @click="goToApp(app.url)" class="app-row p-3.5 rounded-2xl flex items-center space-x-4 cursor-pointer">
-                    <div :class="`w-10 h-10 rounded-xl flex items-center justify-center ${app.bgColor}`"><i :data-lucide="app.icon" class="w-5 h-5 text-white"></i></div>
-                    <div class="flex-1"><p class="text-sm font-bold text-white">{{ app.name }}</p><p class="text-[10px] text-blue-200/50">{{ app.subtitle }}</p></div>
+                <div v-for="app in apps" :key="app.name" @click="goToApp(app.url)"
+                    class="app-row p-3.5 rounded-2xl flex items-center space-x-4 cursor-pointer">
+                    <div :class="`w-10 h-10 rounded-xl flex items-center justify-center ${app.bgColor}`"><i
+                            :data-lucide="app.icon" class="w-5 h-5 text-white"></i></div>
+                    <div class="flex-1">
+                        <p class="text-sm font-bold text-white">{{ app.name }}</p>
+                        <p class="text-[10px] text-blue-200/50">{{ app.subtitle }}</p>
+                    </div>
                     <i data-lucide="chevron-right" class="w-4 h-4 text-blue-200/20"></i>
                 </div>
             </div>
 
-            <div v-if="isAdmin" class="pt-2"><a href="admin.html" class="w-full py-3 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-xl text-[10px] font-bold uppercase tracking-widest flex items-center justify-center"><i data-lucide="settings-2" class="w-4 h-4 mr-2"></i> Quản trị hệ thống</a></div>
+            <div v-if="isAdmin" class="pt-2"><a href="admin.html"
+                    class="w-full py-3 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-xl text-[10px] font-bold uppercase tracking-widest flex items-center justify-center"><i
+                        data-lucide="settings-2" class="w-4 h-4 mr-2"></i> Quản trị hệ thống</a></div>
         </div>
 
-        <div class="mt-8 pt-4 border-t border-white/5 text-center"><p class="text-[9px] text-blue-200/20">© 2026 HEMEMM. All rights reserved.</p></div>
+        <div class="mt-8 pt-4 border-t border-white/5 text-center">
+            <p class="text-[9px] text-blue-200/20">© 2026 HEMEMM. All rights reserved.</p>
+        </div>
 
         <!-- PROFILE MODAL -->
-        <div v-if="showProfile" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4" @click.self="showProfile = false">
-            <div class="glass-container border-orange-500/30 animate-in fade-in zoom-in duration-300 max-w-md w-full max-h-[90vh] overflow-y-auto">
-                <button @click="showProfile = false" class="absolute top-4 right-4 text-white/50"><i data-lucide="x" class="w-6 h-6"></i></button>
+        <div v-if="showProfile" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4"
+            @click.self="showProfile = false">
+            <div
+                class="glass-container border-orange-500/30 animate-in fade-in zoom-in duration-300 max-w-md w-full max-h-[90vh] overflow-y-auto">
+                <button @click="showProfile = false" class="absolute top-4 right-4 text-white/50"><i data-lucide="x"
+                        class="w-6 h-6"></i></button>
                 <div class="text-center space-y-4">
                     <!-- Avatar Section (Giữ nguyên Reader logic) -->
                     <div class="relative inline-block group" @click="!uploading && $refs.fileInput.click()">
-                        <div class="w-20 h-24 rounded-3xl bg-orange-500 mx-auto flex items-center justify-center text-3xl font-bold border-4 border-white/10 overflow-hidden cursor-pointer shadow-2xl">
-                            <img v-if="profile?.avatar_url" :src="profile.avatar_url" class="w-full h-full object-cover"><span v-else>{{ userInitial }}</span>
+                        <div
+                            class="w-20 h-24 rounded-3xl bg-orange-500 mx-auto flex items-center justify-center text-3xl font-bold border-4 border-white/10 overflow-hidden cursor-pointer shadow-2xl">
+                            <img v-if="profile?.avatar_url" :src="profile.avatar_url"
+                                class="w-full h-full object-cover"><span v-else>{{ userInitial }}</span>
                         </div>
-                        <div class="absolute inset-0 bg-black/40 rounded-3xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"><i data-lucide="camera" class="w-6 h-6 text-white"></i></div>
+                        <div
+                            class="absolute inset-0 bg-black/40 rounded-3xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                            <i data-lucide="camera" class="w-6 h-6 text-white"></i>
+                        </div>
                         <input type="file" ref="fileInput" class="hidden" @change="handleAvatarUpload" accept="image/*">
                     </div>
 
                     <div class="space-y-1">
                         <h3 class="text-xl font-bold text-orange-500">{{ profile?.full_name }}</h3>
-                        <p class="text-[10px] font-mono text-blue-200/60 uppercase tracking-widest">{{ profile?.employee_code || '---' }} • {{ profile?.job_title }}</p>
+                        <p class="text-[10px] font-mono text-blue-200/60 uppercase tracking-widest">{{
+                            profile?.employee_code || '---' }} • {{ profile?.job_title }}</p>
                     </div>
 
                     <!-- THÔNG TIN LIÊN HỆ -->
                     <div class="bg-white/5 rounded-2xl p-4 text-left space-y-3 text-xs border border-white/5">
                         <div>
-                            <label class="text-[10px] text-white/40 block mb-1 uppercase tracking-tighter">Email công việc:</label>
+                            <label class="text-[10px] text-white/40 block mb-1 uppercase tracking-tighter">Email công
+                                việc:</label>
                             <span class="text-sky-400 font-medium block">{{ profile?.company_email }}</span>
-                        </div>
-                        
-                        <div>
-                            <label class="text-[10px] text-white/40 block mb-1 uppercase tracking-tighter">Email cá nhân:</label>
-                            <div v-if="!isEditingContact" class="text-white font-medium">{{ profile?.personal_email || 'Chưa cập nhật' }}</div>
-                            <input v-else type="email" v-model="editProfileForm.personal_email" class="glass-input text-xs py-1.5" placeholder="nhap@email.com">
                         </div>
 
                         <div>
-                            <label class="text-[10px] text-white/40 block mb-1 uppercase tracking-tighter">Số điện thoại:</label>
-                            <div v-if="!isEditingContact" class="text-white font-medium">{{ profile?.phone_number || 'Chưa cập nhật' }}</div>
-                            <input v-else type="text" v-model="editProfileForm.phone_number" class="glass-input text-xs py-1.5" placeholder="090...">
+                            <label class="text-[10px] text-white/40 block mb-1 uppercase tracking-tighter">Email cá
+                                nhân:</label>
+                            <div v-if="!isEditingContact" class="text-white font-medium">{{ profile?.personal_email ||
+                                'Chưa cập nhật' }}</div>
+                            <input v-else type="email" v-model="editProfileForm.personal_email"
+                                class="glass-input text-xs py-1.5" placeholder="nhap@email.com">
+                        </div>
+
+                        <div>
+                            <label class="text-[10px] text-white/40 block mb-1 uppercase tracking-tighter">Số điện
+                                thoại:</label>
+                            <div v-if="!isEditingContact" class="text-white font-medium">{{ profile?.phone_number ||
+                                'Chưa cập nhật' }}</div>
+                            <input v-else type="text" v-model="editProfileForm.phone_number"
+                                class="glass-input text-xs py-1.5" placeholder="090...">
                         </div>
 
                         <div class="pt-2">
-                            <button v-if="!isEditingContact" @click="isEditingContact = true" class="w-full py-2 bg-blue-600/20 text-blue-400 border border-blue-600/30 rounded-xl text-[10px] font-bold uppercase tracking-wider">
+                            <button v-if="!isEditingContact" @click="isEditingContact = true"
+                                class="w-full py-2 bg-blue-600/20 text-blue-400 border border-blue-600/30 rounded-xl text-[10px] font-bold uppercase tracking-wider">
                                 SỬA LIÊN HỆ
                             </button>
                             <div v-else class="flex gap-2 w-full">
-                                <button @click="isEditingContact = false" class="flex-1 py-2 bg-white/5 border border-white/10 rounded-xl text-[10px] font-bold uppercase">HỦY</button>
-                                <button @click="saveProfileContact" :disabled="savingProfile" class="flex-1 py-2 bg-blue-600 rounded-xl text-[10px] font-bold uppercase text-white">
+                                <button @click="isEditingContact = false"
+                                    class="flex-1 py-2 bg-white/5 border border-white/10 rounded-xl text-[10px] font-bold uppercase">HỦY</button>
+                                <button @click="saveProfileContact" :disabled="savingProfile"
+                                    class="flex-1 py-2 bg-blue-600 rounded-xl text-[10px] font-bold uppercase text-white">
                                     CẬP NHẬT
                                 </button>
                             </div>
@@ -178,22 +307,31 @@
                     <div class="bg-white/5 rounded-2xl p-4 text-left space-y-3 text-xs border border-white/5">
                         <div v-if="isEditingPassword" class="space-y-3 animate-in fade-in duration-200">
                             <div>
-                                <label class="text-[10px] text-white/40 block mb-1 uppercase tracking-tighter text-orange-400">Mật khẩu mới:</label>
-                                <input type="password" v-model="newPassword" class="glass-input text-xs py-1.5" placeholder="Tối thiểu 6 ký tự">
+                                <label
+                                    class="text-[10px] text-white/40 block mb-1 uppercase tracking-tighter text-orange-400">Mật
+                                    khẩu mới:</label>
+                                <input type="password" v-model="newPassword" class="glass-input text-xs py-1.5"
+                                    placeholder="Tối thiểu 6 ký tự">
                             </div>
                             <div>
-                                <label class="text-[10px] text-white/40 block mb-1 uppercase tracking-tighter text-orange-400">Xác nhận mật khẩu:</label>
-                                <input type="password" v-model="confirmNewPassword" class="glass-input text-xs py-1.5" placeholder="Nhập lại mật khẩu">
+                                <label
+                                    class="text-[10px] text-white/40 block mb-1 uppercase tracking-tighter text-orange-400">Xác
+                                    nhận mật khẩu:</label>
+                                <input type="password" v-model="confirmNewPassword" class="glass-input text-xs py-1.5"
+                                    placeholder="Nhập lại mật khẩu">
                             </div>
                         </div>
 
                         <div>
-                            <button v-if="!isEditingPassword" @click="isEditingPassword = true" class="w-full py-2 bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded-xl text-[10px] font-bold uppercase tracking-wider">
+                            <button v-if="!isEditingPassword" @click="isEditingPassword = true"
+                                class="w-full py-2 bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded-xl text-[10px] font-bold uppercase tracking-wider">
                                 ĐỔI MẬT KHẨU
                             </button>
                             <div v-else class="flex gap-2 w-full">
-                                <button @click="isEditingPassword = false; newPassword = ''; confirmNewPassword = '';" class="flex-1 py-2 bg-white/5 border border-white/10 rounded-xl text-[10px] font-bold uppercase">HỦY</button>
-                                <button @click="handleChangePassword" :disabled="changingPassword" class="flex-1 py-2 bg-orange-600 rounded-xl text-[10px] font-bold uppercase text-white shadow-lg shadow-orange-900/20">
+                                <button @click="isEditingPassword = false; newPassword = ''; confirmNewPassword = '';"
+                                    class="flex-1 py-2 bg-white/5 border border-white/10 rounded-xl text-[10px] font-bold uppercase">HỦY</button>
+                                <button @click="handleChangePassword" :disabled="changingPassword"
+                                    class="flex-1 py-2 bg-orange-600 rounded-xl text-[10px] font-bold uppercase text-white shadow-lg shadow-orange-900/20">
                                     CẬP NHẬT
                                 </button>
                             </div>
@@ -306,7 +444,7 @@
                     reader.onload = async function () {
                         const base64 = reader.result.split(',')[1];
                         try {
-                            const res = await fetch(GOOGLE_SCRIPT_URL, { method: "POST", body: JSON.stringify({ base64, mimeType: file.type, fileName: `avatar_${profile.value.employee_code}_${Date.now()}.jpg` })});
+                            const res = await fetch(GOOGLE_SCRIPT_URL, { method: "POST", body: JSON.stringify({ base64, mimeType: file.type, fileName: `avatar_${profile.value.employee_code}_${Date.now()}.jpg` }) });
                             const result = await res.json();
                             if (result.status === "success") { await supabaseClient.from('profiles').update({ avatar_url: result.url }).eq('id', session.value.user.id); profile.value.avatar_url = result.url; notify("✅ Đã cập nhật ảnh!"); }
                             else throw new Error(result.message);
@@ -322,5 +460,20 @@
             }
         }).mount('#app');
     </script>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('Service Worker đã đăng ký thành công với scope:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.log('Đăng ký Service Worker thất bại:', error);
+                    });
+            });
+        }
+    </script>
 </body>
+
 </html>
