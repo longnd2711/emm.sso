@@ -1,400 +1,324 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HEM Admin - Quản lý tài khoản</title>
-    
-    <!-- Thư viện CDN -->
+    <title>HEM EMM - Hệ thống ứng dụng</title>
+
+    <!-- Thư viện CDN (Giữ nguyên gốc) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-
-    <!-- Toastify JS -->
+    
+    <!-- Toastify JS CSS (Giữ nguyên gốc) -->
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        
-        body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
-            min-height: 100vh;
-            margin: 0;
-            color: white;
-        }
-
-        .glass-card {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 1.5rem;
-        }
-
-        .glass-input {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: white;
-            width: 100%;
-            padding: 0.6rem 1rem;
-            border-radius: 0.75rem;
-            font-size: 0.875rem;
-        }
-
-        .glass-input:disabled { opacity: 0.5; cursor: not-allowed; background: rgba(0,0,0,0.2); }
-
-        select.glass-input option {
-            background-color: #1e293b !important;
-            color: white !important;
-        }
-
-        .glass-input:focus { border-color: #f97316; outline: none; background: rgba(255, 255, 255, 0.12); }
-
-        .tab-btn { padding: 0.75rem 1.5rem; border-radius: 1rem; font-weight: 600; font-size: 0.875rem; transition: all 0.3s ease; }
-        .tab-btn.active { background: #f97316; color: white; box-shadow: 0 4px 15px rgba(249, 115, 22, 0.3); }
-
-        .role-badge { padding: 2px 8px; border-radius: 6px; font-size: 9px; font-weight: 700; text-transform: uppercase; }
-        .role-admin { background: #ef4444; color: white; }
-        .role-director { background: #8b5cf6; color: white; }
-        .role-hr_admin { background: #f59e0b; color: white; }
-        .role-manager { background: #3b82f6; color: white; }
-        .role-staff { background: #64748b; color: white; }
-
-        .status-badge { padding: 2px 6px; border-radius: 4px; font-size: 8px; font-weight: 600; }
-        .status-active { background: #10b981; color: white; }
-        .status-pending { background: #f59e0b; color: white; }
-        .status-resigned { background: #475569; color: white; }
-
-        .perm-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-
+        body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; margin: 0; padding: 15px; }
+        .glass-container { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 2.5rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); width: 100%; max-width: 400px; padding: 2.5rem 1.5rem; color: white; }
+        .glass-input { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.1); color: white; transition: all 0.3s ease; }
+        .glass-input:focus { background: rgba(255, 255, 255, 0.12); border-color: #f97316; outline: none; box-shadow: 0 0 15px rgba(249, 115, 22, 0.3); }
+        .btn-orange { background: linear-gradient(90deg, #f97316 0%, #ea580c 100%); box-shadow: 0 4px 15px rgba(234, 88, 12, 0.4); }
+        .btn-orange:disabled { opacity: 0.6; cursor: not-allowed; }
+        .app-row { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); transition: all 0.2s ease; }
+        .app-row:active { background: rgba(255, 255, 255, 0.1); transform: scale(0.98); }
+        .modal-overlay { background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(8px); }
         [v-cloak] { display: none; }
-        .toastify { border-radius: 12px; font-family: 'Inter', sans-serif; }
-
-        .user-row { transition: all 0.2s ease; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
-        .user-row.resigned { opacity: 0.4; }
-        .user-row:hover { background: rgba(255, 255, 255, 0.03); }
+        .toastify { border-radius: 12px; font-family: 'Inter', sans-serif; font-size: 14px; }
     </style>
 </head>
-<body class="p-4 md:p-8">
 
-    <div id="app" v-cloak class="max-w-6xl mx-auto">
-        
+<body>
+
+    <div id="app" v-cloak class="glass-container">
+
         <!-- HEADER -->
-        <div class="flex items-center justify-between mb-8">
-            <div class="flex items-center space-x-4">
-                <a href="index.html" class="p-3 glass-card hover:bg-white/10 transition-colors group" title="Về trang ứng dụng">
-                    <i data-lucide="layout-grid" class="w-6 h-6 text-orange-500 group-hover:scale-110 transition-transform"></i>
-                </a>
-                <div>
-                    <h1 class="text-2xl font-bold tracking-tight">Quản trị <span class="text-orange-500">HEM EMM</span></h1>
-                    <p class="text-[10px] text-blue-200/40 uppercase tracking-[0.2em]">Hệ thống quản lý tập trung</p>
-                </div>
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-orange-500 mb-4 shadow-lg shadow-orange-500/30">
+                <i data-lucide="shield-check" class="w-8 h-8 text-white"></i>
+            </div>
+            <h1 class="text-2xl font-bold tracking-tight text-white">HEM <span class="text-orange-500">EMM</span></h1>
+            <p class="text-[10px] text-blue-200/60 uppercase tracking-widest mt-1 font-medium">Hệ thống Ứng dụng Nội bộ</p>
+        </div>
+
+        <!-- TRẠNG THÁI: CHƯA ĐĂNG NHẬP -->
+        <div v-if="!session" class="space-y-6">
+            <div class="flex p-1 bg-white/5 rounded-xl mb-4">
+                <button @click="authMode = 'login'" :class="['flex-1 py-2 text-[10px] font-bold rounded-lg transition-all', authMode === 'login' ? 'bg-orange-500 text-white' : 'text-white/40']">ĐĂNG NHẬP</button>
+                <button @click="authMode = 'signup'" :class="['flex-1 py-2 text-[10px] font-bold rounded-lg transition-all', authMode === 'signup' ? 'bg-orange-500 text-white' : 'text-white/40']">KÍCH HOẠT</button>
             </div>
 
-            <button @click="handleLogout" class="p-3 glass-card hover:bg-red-500/20 text-blue-300/50 hover:text-red-500 transition-colors" title="Đăng xuất">
-                <i data-lucide="log-out" class="w-5 h-5"></i>
-            </button>
-        </div>
-
-        <!-- TAB NAVIGATION -->
-        <div class="flex space-x-2 mb-8 p-1.5 glass-card inline-flex">
-            <button @click="activeTab = 'users'" :class="['tab-btn', activeTab === 'users' ? 'active' : 'text-white/50 hover:text-white']">
-                QUẢN LÝ TÀI KHOẢN
-            </button>
-            <button @click="activeTab = 'org'" :class="['tab-btn', activeTab === 'org' ? 'active' : 'text-white/50 hover:text-white']">
-                SƠ ĐỒ TỔ CHỨC
-            </button>
-        </div>
-
-        <!-- TAB 1: QUẢN LÝ TÀI KHOẢN -->
-        <div v-if="activeTab === 'users'" class="space-y-6">
-            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-                <div class="flex flex-1 gap-4 w-full">
-                    <div class="relative flex-1">
-                        <i data-lucide="search" class="absolute left-4 top-3 w-4 h-4 text-white/30"></i>
-                        <input type="text" v-model="searchQuery" placeholder="Tìm tên, mã NV, email hoặc chức danh..." class="glass-input pl-10">
+            <div class="space-y-4">
+                <!-- FORM NHẬP EMAIL & PASS -->
+                <div v-if="signupStep === 1" class="space-y-4 animate-in fade-in duration-300">
+                    <div class="relative">
+                        <span class="absolute left-4 top-3.5 text-blue-300/50"><i data-lucide="mail" class="w-5 h-5"></i></span>
+                        <input type="email" v-model="email" placeholder="Email nhân viên (@hem.com.vn)" class="glass-input w-full pl-12 pr-4 py-3.5 rounded-2xl text-sm">
                     </div>
-                    <select v-model="filterDept" class="glass-input md:w-56 text-white bg-slate-800">
-                        <option value="">Tất cả phòng ban</option>
-                        <option v-for="d in departments" :key="d.id" :value="d.id">{{ d.name }}</option>
-                    </select>
+                    <div class="relative">
+                        <span class="absolute left-4 top-3.5 text-blue-300/50"><i data-lucide="key-round" class="w-5 h-5"></i></span>
+                        <input :type="showPassword ? 'text' : 'password'" v-model="password" placeholder="Mật khẩu" @keyup.enter="handleSubmit" class="glass-input w-full pl-12 pr-12 py-3.5 rounded-2xl text-sm">
+                        <button @click="showPassword = !showPassword" class="absolute right-4 top-3.5 text-blue-300/50 hover:text-orange-400"><i :data-lucide="showPassword ? 'eye-off' : 'eye'" class="w-5 h-5"></i></button>
+                    </div>
+                    <!-- Xác nhận mật khẩu (Signup) -->
+                    <div v-if="authMode === 'signup'" class="relative animate-in slide-in-from-top-2 duration-200">
+                        <span class="absolute left-4 top-3.5 text-blue-300/50"><i data-lucide="check-check" class="w-5 h-5"></i></span>
+                        <input :type="showPassword ? 'text' : 'password'" v-model="confirmPassword" placeholder="Nhập lại mật khẩu" class="glass-input w-full pl-12 pr-4 py-3.5 rounded-2xl text-sm">
+                    </div>
                 </div>
-                <button @click="openUserModal()" class="bg-orange-500 px-6 py-3 rounded-2xl font-bold text-xs flex items-center shadow-lg shadow-orange-500/20 whitespace-nowrap hover:scale-105 transition-transform w-full md:w-auto justify-center text-white">
-                    <i data-lucide="user-plus" class="w-4 h-4 mr-2"></i> THÊM NHÂN VIÊN
-                </button>
-            </div>
 
-            <div class="glass-card overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs">
-                        <thead class="bg-white/5 text-white/40 uppercase tracking-widest font-bold">
-                            <tr>
-                                <th class="px-6 py-4">Nhân sự & Chức danh</th>
-                                <th class="px-6 py-4 text-center">Vai trò</th>
-                                <th class="px-6 py-4 text-center">Trạng thái</th>
-                                <th class="px-6 py-4 text-center hidden lg:table-cell">Quyền Apps</th>
-                                <th class="px-6 py-4 text-right">Thao tác</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-white/5 text-white">
-                            <tr v-for="user in filteredUsers" :key="user.id" :class="['user-row', user.status]">
-                                <td class="px-6 py-4">
-                                    <div class="flex items-center space-x-3">
-                                        <div class="w-10 h-10 rounded-xl bg-orange-500 flex-shrink-0 flex items-center justify-center font-bold text-sm overflow-hidden shadow-inner">
-                                            <img v-if="user.avatar_url" :src="user.avatar_url" class="w-full h-full object-cover">
-                                            <span v-else>{{ getInitial(user.full_name) }}</span>
-                                        </div>
-                                        <div>
-                                            <p class="font-bold">{{ user.full_name }} <span class="text-orange-400 font-mono text-[10px]">({{ user.employee_code || '---' }})</span></p>
-                                            <p class="text-[10px] text-blue-200/60 uppercase">{{ user.job_title || 'Chưa cập nhật' }} • {{ user.departments?.name || 'Văn phòng' }}</p>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 text-center">
-                                    <span :class="['role-badge', 'role-' + user.role]">{{ user.role }}</span>
-                                </td>
-                                <td class="px-6 py-4 text-center">
-                                    <div class="flex flex-col items-center gap-1">
-                                        <span v-if="user.status === 'resigned'" class="status-badge status-resigned">NGHỈ VIỆC</span>
-                                        <span v-else-if="user.is_claimed" class="status-badge status-active">ĐÃ KÍCH HOẠT</span>
-                                        <span v-else class="status-badge status-pending">CHỜ KÍCH HOẠT</span>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 text-center hidden lg:table-cell">
-                                    <div class="flex justify-center gap-1.5" v-if="user.app_permissions">
-                                        <div v-for="(perm, app) in user.app_permissions" :key="app" 
-                                             class="w-2 h-2 rounded-full" 
-                                             :class="perm !== 'none' ? 'bg-green-500' : 'bg-white/10'"
-                                             :title="app + ': ' + perm">
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 text-right space-x-2">
-                                    <button @click="openUserModal(user)" class="p-2 bg-white/5 rounded-lg hover:bg-orange-500 transition-colors">
-                                        <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
-                                    </button>
-                                    <button v-if="!user.is_claimed" @click="handleHardDelete(user)" class="p-2 bg-white/5 rounded-lg hover:bg-red-600 transition-colors text-red-400 hover:text-white" title="Xóa hồ sơ">
-                                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <!-- FORM NHẬP OTP -->
+                <div v-if="signupStep === 2" class="space-y-4 animate-in zoom-in duration-300">
+                    <div class="text-center px-4">
+                        <p class="text-xs text-orange-200/80 leading-relaxed mb-4">Mã xác thực 6 số đã được gửi tới <b>{{email}}</b></p>
+                    </div>
+                    <div class="relative">
+                        <span class="absolute left-4 top-3.5 text-blue-300/50"><i data-lucide="lock" class="w-5 h-5"></i></span>
+                        <input type="text" v-model="otpToken" placeholder="Mã OTP" maxlength="6" class="glass-input w-full pl-12 pr-4 py-3.5 rounded-2xl text-center text-xl tracking-[0.5em] font-bold">
+                    </div>
+                    <button @click="signupStep = 1" class="w-full text-[10px] text-white/30 uppercase font-bold hover:text-white">Thay đổi email</button>
+                </div>
+
+                <button @click="handleSubmit" :disabled="loading" class="btn-orange w-full py-4 rounded-2xl font-bold text-white shadow-lg flex items-center justify-center">
+                    <span v-if="loading" class="animate-spin mr-2">◌</span>
+                    <span class="uppercase tracking-widest text-xs">{{ loading ? 'ĐANG XỬ LÝ...' : (signupStep === 2 ? 'XÁC NHẬN OTP' : (authMode === 'login' ? 'ĐĂNG NHẬP' : 'NHẬN MÃ XÁC THỰC')) }}</span>
+                </button>
+
+                <div v-if="authMode === 'login'" class="text-center">
+                    <button @click="handleForgotPassword" class="text-[10px] text-blue-200/40 hover:text-orange-400 transition-colors uppercase font-bold tracking-tighter">Quên mật khẩu?</button>
                 </div>
             </div>
         </div>
 
-        <!-- TAB 2: QUẢN LÝ SƠ ĐỒ TỔ CHỨC -->
-        <div v-if="activeTab === 'org'" class="space-y-6">
-            <div class="flex justify-end">
-                <button @click="openDeptModal()" class="bg-orange-500 px-6 py-3 rounded-2xl font-bold text-xs flex items-center shadow-lg shadow-orange-500/20 text-white">
-                    <i data-lucide="plus-circle" class="w-4 h-4 mr-2"></i> THÊM PHÒNG BAN
-                </button>
+        <!-- TRẠNG THÁI: ĐÃ ĐĂNG NHẬP -->
+        <div v-else class="space-y-4">
+            <div class="bg-white/5 border border-white/10 p-3 rounded-2xl flex items-center justify-between">
+                <div class="flex items-center space-x-3 cursor-pointer" @click="openProfileModal">
+                    <div class="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center text-lg font-bold shadow-inner overflow-hidden relative border border-white/10">
+                        <img v-if="profile?.avatar_url" :src="profile.avatar_url" class="w-full h-full object-cover">
+                        <span v-else>{{ userInitial }}</span>
+                    </div>
+                    <div>
+                        <p class="text-[9px] text-blue-200/50 uppercase font-bold tracking-tighter">{{ profile?.job_title || 'Nhân sự HEM' }}</p>
+                        <p class="text-sm font-semibold text-white truncate w-32">{{ profile?.full_name || 'Nhân viên' }}</p>
+                    </div>
+                </div>
+                <button @click="handleLogout" class="p-2 text-blue-300/50 hover:text-red-400 transition-all"><i data-lucide="log-out" class="w-5 h-5"></i></button>
             </div>
-            <div class="glass-card overflow-hidden">
-                <table class="w-full text-left text-xs text-white">
-                    <thead class="bg-white/5 text-white/40 uppercase tracking-widest font-bold">
-                        <tr>
-                            <th class="px-6 py-4">Mã / Tên phòng ban</th>
-                            <th class="px-6 py-4">Phòng ban cha</th>
-                            <th class="px-6 py-4">Phụ trách</th>
-                            <th class="px-6 py-4 text-right">Thao tác</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-white/5">
-                        <tr v-for="dept in departments" :key="dept.id" class="user-row">
-                            <td class="px-6 py-4 font-bold text-orange-500">{{ dept.dep_code }} <br><span class="text-white text-[10px]">{{ dept.name }}</span></td>
-                            <td class="px-6 py-4 text-white/40">{{ getDeptName(dept.parent_id) || '---' }}</td>
-                            <td class="px-6 py-4">{{ getUserName(dept.manager_id) || 'Chưa chỉ định' }}</td>
-                            <td class="px-6 py-4 text-right space-x-2">
-                                <button @click="openDeptModal(dept)" class="p-2 hover:text-orange-500"><i data-lucide="edit" class="w-4 h-4"></i></button>
-                                <button @click="deleteDept(dept.id)" class="p-2 hover:text-red-500"><i data-lucide="trash" class="w-4 h-4"></i></button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+
+            <div class="space-y-2.5">
+                <div v-for="app in apps" :key="app.name" @click="goToApp(app.url)" class="app-row p-3.5 rounded-2xl flex items-center space-x-4 cursor-pointer">
+                    <div :class="`w-10 h-10 rounded-xl flex items-center justify-center ${app.bgColor}`"><i :data-lucide="app.icon" class="w-5 h-5 text-white"></i></div>
+                    <div class="flex-1"><p class="text-sm font-bold text-white">{{ app.name }}</p><p class="text-[10px] text-blue-200/50">{{ app.subtitle }}</p></div>
+                    <i data-lucide="chevron-right" class="w-4 h-4 text-blue-200/20"></i>
+                </div>
             </div>
+
+            <div v-if="isAdmin" class="pt-2"><a href="admin.html" class="w-full py-3 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-xl text-[10px] font-bold uppercase tracking-widest flex items-center justify-center"><i data-lucide="settings-2" class="w-4 h-4 mr-2"></i> Quản trị hệ thống</a></div>
         </div>
 
-        <!-- MODAL GỘP: THIẾT LẬP NHÂN SỰ -->
-        <div v-if="showUserModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
-            <div class="glass-card w-full max-w-3xl p-8 relative max-h-[90vh] overflow-y-auto border-orange-500/20">
-                <button @click="showUserModal = false" class="absolute top-6 right-6 text-white/50"><i data-lucide="x" class="w-6 h-6"></i></button>
-                <h2 class="text-xl font-bold mb-8 text-orange-500">{{ userForm.id ? 'Cập nhật hồ sơ' : 'Thêm hồ sơ nhân sự mới' }}</h2>
+        <div class="mt-8 pt-4 border-t border-white/5 text-center"><p class="text-[9px] text-blue-200/20">© 2026 HEMEMM. All rights reserved.</p></div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-white">
-                    <!-- CỘT 1: THÔNG TIN -->
-                    <div class="space-y-4">
-                        <p class="text-[10px] font-bold text-white/30 uppercase tracking-widest mb-4">Thông tin cơ bản</p>
-                        <div><label class="text-[10px] text-white/50 mb-1 block uppercase">Họ và tên *</label><input type="text" v-model="userForm.full_name" class="glass-input"></div>
-                        <div class="grid grid-cols-2 gap-3">
-                            <div><label class="text-[10px] text-white/50 mb-1 block uppercase">Mã nhân viên</label><input type="text" v-model="userForm.employee_code" class="glass-input"></div>
-                            <div><label class="text-[10px] text-white/50 mb-1 block uppercase">Chức danh *</label><input type="text" v-model="userForm.job_title" class="glass-input"></div>
+        <!-- PROFILE MODAL -->
+        <div v-if="showProfile" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4" @click.self="showProfile = false">
+            <div class="glass-container border-orange-500/30 animate-in fade-in zoom-in duration-300 max-w-md w-full max-h-[90vh] overflow-y-auto">
+                <button @click="showProfile = false" class="absolute top-4 right-4 text-white/50"><i data-lucide="x" class="w-6 h-6"></i></button>
+                <div class="text-center space-y-4">
+                    <!-- Avatar Section (Giữ nguyên Reader logic) -->
+                    <div class="relative inline-block group" @click="!uploading && $refs.fileInput.click()">
+                        <div class="w-20 h-24 rounded-3xl bg-orange-500 mx-auto flex items-center justify-center text-3xl font-bold border-4 border-white/10 overflow-hidden cursor-pointer shadow-2xl">
+                            <img v-if="profile?.avatar_url" :src="profile.avatar_url" class="w-full h-full object-cover"><span v-else>{{ userInitial }}</span>
                         </div>
-                        <div><label class="text-[10px] text-white/50 mb-1 block uppercase">Email công việc *</label><input type="email" v-model="userForm.company_email" class="glass-input" :disabled="userForm.is_claimed"></div>
-                        <div class="grid grid-cols-2 gap-3">
-                            <div><label class="text-[10px] text-white/50 mb-1 block uppercase">Email cá nhân</label><input type="email" v-model="userForm.personal_email" class="glass-input"></div>
-                            <div><label class="text-[10px] text-white/50 mb-1 block uppercase">Số điện thoại</label><input type="text" v-model="userForm.phone_number" class="glass-input"></div>
-                        </div>
-                        <div class="grid grid-cols-2 gap-3">
-                            <div><label class="text-[10px] text-white/50 mb-1 block uppercase">Phòng ban</label><select v-model="userForm.department_id" class="glass-input bg-slate-800"><option v-for="d in departments" :key="d.id" :value="d.id">{{ d.name }}</option></select></div>
-                            <div><label class="text-[10px] text-white/50 mb-1 block uppercase">Vai trò hệ thống</label><select v-model="userForm.role" class="glass-input bg-slate-800"><option v-for="r in roleList" :key="r" :value="r">{{ r.toUpperCase() }}</option></select></div>
-                        </div>
-                        <div><label class="text-[10px] text-white/50 mb-1 block uppercase">Quản lý trực tiếp</label><select v-model="userForm.direct_manager_id" class="glass-input bg-slate-800"><option :value="null">-- Không có --</option><option v-for="u in users" :key="u.id" :value="u.id" v-show="u.id !== userForm.id">{{ u.full_name }}</option></select></div>
+                        <div class="absolute inset-0 bg-black/40 rounded-3xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"><i data-lucide="camera" class="w-6 h-6 text-white"></i></div>
+                        <input type="file" ref="fileInput" class="hidden" @change="handleAvatarUpload" accept="image/*">
                     </div>
 
-                    <!-- CỘT 2: PHÂN QUYỀN -->
-                    <div class="space-y-4">
-                        <p class="text-[10px] font-bold text-white/30 uppercase tracking-widest mb-4">Phân quyền 5 Apps</p>
-                        <div class="bg-white/5 rounded-2xl p-4 space-y-4 border border-white/5">
-                            <div v-for="(options, app) in appOptions" :key="app" class="flex items-center justify-between">
-                                <span class="text-[10px] font-bold uppercase text-blue-300">{{ app === 'tailieu' ? 'Tài liệu' : app }}</span>
-                                <select v-model="userForm.app_permissions[app]" class="bg-slate-800 border border-white/10 rounded-lg px-2 py-1 text-[10px] text-orange-400 font-bold focus:outline-none" :disabled="userForm.status === 'resigned'">
-                                    <option v-for="opt in options" :key="opt" :value="opt">{{ opt.toUpperCase() }}</option>
-                                </select>
+                    <div class="space-y-1">
+                        <h3 class="text-xl font-bold text-orange-500">{{ profile?.full_name }}</h3>
+                        <p class="text-[10px] font-mono text-blue-200/60 uppercase tracking-widest">{{ profile?.employee_code || '---' }} • {{ profile?.job_title }}</p>
+                    </div>
+
+                    <!-- THÔNG TIN LIÊN HỆ -->
+                    <div class="bg-white/5 rounded-2xl p-4 text-left space-y-3 text-xs border border-white/5">
+                        <div>
+                            <label class="text-[10px] text-white/40 block mb-1 uppercase tracking-tighter">Email công việc:</label>
+                            <span class="text-sky-400 font-medium block">{{ profile?.company_email }}</span>
+                        </div>
+                        
+                        <div>
+                            <label class="text-[10px] text-white/40 block mb-1 uppercase tracking-tighter">Email cá nhân:</label>
+                            <div v-if="!isEditingContact" class="text-white font-medium">{{ profile?.personal_email || 'Chưa cập nhật' }}</div>
+                            <input v-else type="email" v-model="editProfileForm.personal_email" class="glass-input text-xs py-1.5" placeholder="nhap@email.com">
+                        </div>
+
+                        <div>
+                            <label class="text-[10px] text-white/40 block mb-1 uppercase tracking-tighter">Số điện thoại:</label>
+                            <div v-if="!isEditingContact" class="text-white font-medium">{{ profile?.phone_number || 'Chưa cập nhật' }}</div>
+                            <input v-else type="text" v-model="editProfileForm.phone_number" class="glass-input text-xs py-1.5" placeholder="090...">
+                        </div>
+
+                        <div class="pt-2">
+                            <button v-if="!isEditingContact" @click="isEditingContact = true" class="w-full py-2 bg-blue-600/20 text-blue-400 border border-blue-600/30 rounded-xl text-[10px] font-bold uppercase tracking-wider">
+                                SỬA LIÊN HỆ
+                            </button>
+                            <div v-else class="flex gap-2 w-full">
+                                <button @click="isEditingContact = false" class="flex-1 py-2 bg-white/5 border border-white/10 rounded-xl text-[10px] font-bold uppercase">HỦY</button>
+                                <button @click="saveProfileContact" :disabled="savingProfile" class="flex-1 py-2 bg-blue-600 rounded-xl text-[10px] font-bold uppercase text-white">
+                                    CẬP NHẬT
+                                </button>
                             </div>
                         </div>
-                        <div><label class="text-[10px] text-white/50 mb-1 block uppercase">Trạng thái nhân sự</label><select v-model="userForm.status" class="glass-input bg-slate-800 text-[10px] font-bold"><option value="working">ĐANG LÀM VIỆC</option><option value="resigned">ĐÃ NGHỈ VIỆC</option></select></div>
+                    </div>
+
+                    <!-- ĐỔI MẬT KHẨU -->
+                    <div class="bg-white/5 rounded-2xl p-4 text-left space-y-3 text-xs border border-white/5">
+                        <div v-if="isEditingPassword" class="space-y-3 animate-in fade-in duration-200">
+                            <div>
+                                <label class="text-[10px] text-white/40 block mb-1 uppercase tracking-tighter text-orange-400">Mật khẩu mới:</label>
+                                <input type="password" v-model="newPassword" class="glass-input text-xs py-1.5" placeholder="Tối thiểu 6 ký tự">
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-white/40 block mb-1 uppercase tracking-tighter text-orange-400">Xác nhận mật khẩu:</label>
+                                <input type="password" v-model="confirmNewPassword" class="glass-input text-xs py-1.5" placeholder="Nhập lại mật khẩu">
+                            </div>
+                        </div>
+
+                        <div>
+                            <button v-if="!isEditingPassword" @click="isEditingPassword = true" class="w-full py-2 bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded-xl text-[10px] font-bold uppercase tracking-wider">
+                                ĐỔI MẬT KHẨU
+                            </button>
+                            <div v-else class="flex gap-2 w-full">
+                                <button @click="isEditingPassword = false; newPassword = ''; confirmNewPassword = '';" class="flex-1 py-2 bg-white/5 border border-white/10 rounded-xl text-[10px] font-bold uppercase">HỦY</button>
+                                <button @click="handleChangePassword" :disabled="changingPassword" class="flex-1 py-2 bg-orange-600 rounded-xl text-[10px] font-bold uppercase text-white shadow-lg shadow-orange-900/20">
+                                    CẬP NHẬT
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
-
-                <div class="mt-10 flex gap-4">
-                    <button @click="showUserModal = false" class="flex-1 py-4 bg-white/5 rounded-2xl font-bold text-xs uppercase">Hủy bỏ</button>
-                    <button @click="saveUser" :disabled="saving" class="flex-1 py-4 bg-orange-500 rounded-2xl font-bold text-xs shadow-lg shadow-orange-500/20 uppercase text-white">
-                        {{ saving ? 'Đang xử lý...' : 'XÁC NHẬN LƯU' }}
-                    </button>
-                </div>
             </div>
         </div>
-
-        <!-- MODAL PHÒNG BAN -->
-        <div v-if="showDeptModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-            <div class="glass-card w-full max-w-md p-8 relative text-white">
-                <button @click="showDeptModal = false" class="absolute top-6 right-6 text-white/50"><i data-lucide="x" class="w-6 h-6"></i></button>
-                <h2 class="text-xl font-bold mb-8 text-orange-500">{{ deptForm.id ? 'Sửa phòng ban' : 'Thêm phòng ban mới' }}</h2>
-                <div class="space-y-5">
-                    <div><label class="text-[10px] text-white/40 uppercase mb-1 block">Mã phòng ban</label><input type="text" v-model="deptForm.dep_code" class="glass-input"></div>
-                    <div><label class="text-[10px] text-white/40 uppercase mb-1 block">Tên phòng ban</label><input type="text" v-model="deptForm.name" class="glass-input"></div>
-                    <div><label class="text-[10px] text-white/40 uppercase mb-1 block">Cấp trên</label><select v-model="deptForm.parent_id" class="glass-input bg-slate-800"><option :value="null">-- Cao nhất --</option><option v-for="d in departments" :key="d.id" :value="d.id" v-show="d.id !== deptForm.id">{{ d.name }}</option></select></div>
-                    <div><label class="text-[10px] text-white/40 uppercase mb-1 block">Trưởng phòng</label><select v-model="deptForm.manager_id" class="glass-input bg-slate-800"><option :value="null">-- Chưa có --</option><option v-for="u in users" :key="u.id" :value="u.id">{{ u.full_name }}</option></select></div>
-                </div>
-                <div class="mt-10 flex gap-4"><button @click="showDeptModal = false" class="flex-1 py-4 bg-white/5 rounded-2xl font-bold text-xs uppercase">Hủy</button><button @click="saveDept" :disabled="saving" class="flex-1 py-4 bg-orange-500 rounded-2xl font-bold text-xs text-white">Lưu thông tin</button></div>
-            </div>
-        </div>
-
     </div>
 
     <script>
         const { createApp, ref, onMounted, computed, nextTick, watch } = Vue;
-
-        const SUPABASE_URL = 'https://gjwvhtxkpgwdccizynes.supabase.co'; 
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdqd3ZodHhrcGd3ZGNjaXp5bmVzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2MTY3NzYsImV4cCI6MjEwMDE5Mjc3Nn0.J5rE5-LpLdMjipkKk37PQAAJtEDjV5KCqEQAljIp2UE'; 
+        const SUPABASE_URL = 'https://gjwvhtxkpgwdccizynes.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdqd3ZodHhrcGd3ZGNjaXp5bmVzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2MTY3NzYsImV4cCI6MjEwMDE5Mjc3Nn0.J5rE5-LpLdMjipkKk37PQAAJtEDjV5KCqEQAljIp2UE';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        function notify(msg, type = 'success') {
-            Toastify({ text: msg, duration: 3000, gravity: "top", position: "right",
-                style: { background: type === 'success' ? "linear-gradient(to right, #10b981, #059669)" : "linear-gradient(to right, #ef4444, #dc2626)" }
-            }).showToast();
-        }
+        function notify(msg, type = 'success') { Toastify({ text: msg, duration: 4000, gravity: "top", position: "right", style: { background: type === 'success' ? "linear-gradient(to right, #10b981, #059669)" : "linear-gradient(to right, #ef4444, #dc2626)" } }).showToast(); }
 
         createApp({
             setup() {
-                const activeTab = ref('users');
-                const users = ref([]);
-                const departments = ref([]);
-                const searchQuery = ref('');
-                const filterDept = ref('');
-                const currentUserId = ref('');
-                const showUserModal = ref(false);
-                const showDeptModal = ref(false);
-                const saving = ref(false);
-                
-                const userForm = ref({});
-                const deptForm = ref({ dep_code: '', name: '', parent_id: null, manager_id: null });
-                const roleList = ['staff', 'manager', 'hr_admin', 'director', 'admin'];
-                const appOptions = {
-                    lichhop: ['admin', 'manager', 'staff', 'none'],
-                    taisan: ['admin', 'asset_manager', 'asset_auditor', 'staff', 'none'],
-                    chamcong: ['admin', 'hr_admin', 'clerk', 'staff', 'none'],
-                    tracuu: ['admin', 'accountant', 'inventory', 'sale', 'engineer', 'staff', 'none'],
-                    tailieu: ['admin', 'manager', 'clerk', 'staff', 'none']
-                };
+                const authMode = ref('login');
+                const signupStep = ref(1);
+                const email = ref('');
+                const password = ref('');
+                const confirmPassword = ref('');
+                const otpToken = ref('');
+                const loading = ref(false);
+                const uploading = ref(false);
+                const session = ref(null);
+                const profile = ref(null);
+                const showPassword = ref(false);
+                const showProfile = ref(false);
+                const isEditingContact = ref(false);
+                const editProfileForm = ref({ personal_email: '', phone_number: '' });
+                const savingProfile = ref(false);
+                const isEditingPassword = ref(false);
+                const newPassword = ref('');
+                const confirmNewPassword = ref('');
+                const changingPassword = ref(false);
 
-                onMounted(async () => {
-                    const { data: { session } } = await supabaseClient.auth.getSession();
-                    if (!session) return window.location.href = 'index.html';
-                    currentUserId.value = session.user.id;
-                    if (session.user.app_metadata.role !== 'admin') { window.location.href = 'index.html'; return; }
-                    fetchData();
-                });
+                const apps = [
+                    { name: 'Lịch họp', subtitle: 'Phòng họp & Công tác', icon: 'calendar-days', url: 'lichhop.hem.com.vn', bgColor: 'bg-blue-600' },
+                    { name: 'Tài sản', subtitle: 'Cấp phát & Bàn giao', icon: 'package-search', url: 'taisan.hem.com.vn', bgColor: 'bg-purple-600' },
+                    { name: 'Chấm công', subtitle: 'GPS & Chống gian lận', icon: 'user-check', url: 'chamcong.hem.com.vn', bgColor: 'bg-emerald-600' },
+                    { name: 'Tra cứu', subtitle: 'Thông tin kỹ thuật', icon: 'search', url: 'tracuu.hem.com.vn', bgColor: 'bg-amber-600' },
+                    { name: 'Tài liệu', subtitle: 'Văn bản & Thông báo nội bộ', icon: 'file-text', url: 'tailieu.hem.com.vn', bgColor: 'bg-indigo-600' }
+                ];
 
-                async function fetchData() {
-                    const [uRes, dRes] = await Promise.all([
-                        supabaseClient.from('profiles').select('*, departments!profiles_department_id_fkey(name)').order('full_name'),
-                        supabaseClient.from('departments').select('*').order('name')
-                    ]);
-                    users.value = (uRes.data || []).map(u => ({ ...u, is_claimed: u.created_at !== u.updated_at }));
-                    departments.value = dRes.data || [];
+                const userInitial = computed(() => profile.value?.full_name?.trim().split(' ').pop().charAt(0).toUpperCase() || 'H');
+                const isAdmin = computed(() => session.value?.user?.app_metadata?.role === 'admin');
+
+                onMounted(async () => { const { data } = await supabaseClient.auth.getSession(); session.value = data.session; if (session.value) fetchProfile(); refreshIcons(); });
+                function refreshIcons() { nextTick(() => { if (window.lucide) lucide.createIcons(); }); }
+                async function fetchProfile() {
+                    const { data } = await supabaseClient.from('profiles').select('*').eq('id', session.value.user.id).single();
+                    if (data) { profile.value = data; editProfileForm.value.personal_email = data.personal_email || ''; editProfileForm.value.phone_number = data.phone_number || ''; }
                     refreshIcons();
                 }
 
-                const filteredUsers = computed(() => {
-                    return users.value.filter(u => {
-                        const s = searchQuery.value.toLowerCase();
-                        const matchSearch = !s || (u.full_name || '').toLowerCase().includes(s) || (u.employee_code || '').toLowerCase().includes(s) || (u.company_email || '').toLowerCase().includes(s) || (u.job_title || '').toLowerCase().includes(s);
-                        const matchDept = !filterDept.value || u.department_id === filterDept.value;
-                        return matchSearch && matchDept;
-                    });
-                });
-
-                const getInitial = (name) => name ? name.trim().split(' ').pop().charAt(0).toUpperCase() : 'H';
-                const getUserName = (id) => users.value.find(u => u.id === id)?.full_name || '';
-                const getDeptName = (id) => departments.value.find(d => d.id === id)?.name || '';
-
-                function openUserModal(user = null) {
-                    if (user) userForm.value = JSON.parse(JSON.stringify(user));
-                    else userForm.value = { full_name: '', employee_code: '', company_email: '', personal_email: '', phone_number: '', job_title: '', department_id: null, direct_manager_id: null, role: 'staff', status: 'working', app_permissions: { lichhop: 'staff', taisan: 'staff', chamcong: 'staff', tracuu: 'staff', tailieu: 'staff' } };
-                    showUserModal.value = true;
-                    refreshIcons();
-                }
-
-                async function saveUser() {
-                    if (!userForm.value.full_name || !userForm.value.company_email || !userForm.value.job_title) return notify("Vui lòng điền đủ Tên, Email, Chức danh!", "error");
-                    saving.value = true;
-                    
-                    if (userForm.value.status === 'resigned' && userForm.value.is_claimed) {
-                        await supabaseClient.rpc('admin_manage_user_status', { target_user_id: userForm.value.id, action_type: 'RESIGN' });
+                async function handleSubmit() {
+                    if (!email.value || !password.value) return notify("Vui lòng điền đủ thông tin", "error");
+                    loading.value = true;
+                    if (authMode.value === 'login') {
+                        const { data, error } = await supabaseClient.auth.signInWithPassword({ email: email.value, password: password.value });
+                        if (error) { notify(error.message, "error"); loading.value = false; }
+                        else { setTimeout(async () => { session.value = data.session; await fetchProfile(); notify("Đăng nhập thành công!"); loading.value = false; }, 800); }
+                    } else {
+                        if (signupStep.value === 1) {
+                            if (password.value !== confirmPassword.value) { loading.value = false; return notify("Mật khẩu xác nhận không khớp!", "error"); }
+                            const { error } = await supabaseClient.auth.signUp({ email: email.value, password: password.value });
+                            if (error) { notify(error.message, "error"); loading.value = false; }
+                            else { notify("Mã OTP đã gửi về Email!"); signupStep.value = 2; loading.value = false; }
+                        } else {
+                            const { error } = await supabaseClient.auth.verifyOtp({ email: email.value, token: otpToken.value, type: 'signup' });
+                            if (error) { notify(error.message, "error"); loading.value = false; }
+                            else { notify("✅ Kích hoạt thành công!"); location.reload(); }
+                        }
                     }
+                }
 
-                    let error;
-                    if (userForm.value.id) error = (await supabaseClient.from('profiles').update(userForm.value).eq('id', userForm.value.id)).error;
-                    else error = (await supabaseClient.from('profiles').insert([{ ...userForm.value, id: crypto.randomUUID() }])).error;
-                    
+                async function saveProfileContact() {
+                    savingProfile.value = true;
+                    const { error } = await supabaseClient.from('profiles').update({ personal_email: editProfileForm.value.personal_email, phone_number: editProfileForm.value.phone_number }).eq('id', session.value.user.id);
                     if (error) notify(error.message, "error");
-                    else { notify("Lưu hồ sơ thành công"); showUserModal.value = false; fetchData(); }
-                    saving.value = false;
+                    else { profile.value.personal_email = editProfileForm.value.personal_email; profile.value.phone_number = editProfileForm.value.phone_number; isEditingContact.value = false; notify("Đã cập nhật!"); }
+                    savingProfile.value = false;
                 }
 
-                async function handleHardDelete(user) {
-                    if (confirm(`Xóa vĩnh viễn hồ sơ [${user.full_name}] khỏi hệ thống?`)) {
-                        saving.value = true;
-                        const { error } = await supabaseClient.rpc('admin_manage_user_status', { target_user_id: user.id, action_type: 'DELETE' });
-                        if (error) notify(error.message, "error"); else fetchData();
-                        saving.value = false;
-                    }
+                async function handleChangePassword() {
+                    if (newPassword.value !== confirmNewPassword.value) return notify("Xác nhận mật khẩu sai", "error");
+                    changingPassword.value = true;
+                    const { error } = await supabaseClient.auth.updateUser({ password: newPassword.value });
+                    if (error) notify(error.message, "error");
+                    else { notify("Đổi mật khẩu thành công!"); isEditingPassword.value = false; newPassword.value = ''; confirmNewPassword.value = ''; }
+                    changingPassword.value = false;
                 }
 
-                function openDeptModal(dept = null) { deptForm.value = dept ? JSON.parse(JSON.stringify(dept)) : { dep_code: '', name: '', parent_id: null, manager_id: null }; showDeptModal.value = true; refreshIcons(); }
-                async function saveDept() { saving.value = true; const { error } = await supabaseClient.from('departments').upsert(deptForm.value); if (error) notify(error.message, "error"); else { showDeptModal.value = false; fetchData(); } saving.value = false; }
-                async function deleteDept(id) { if (confirm("Xóa phòng ban?")) { const { error } = await supabaseClient.from('departments').delete().eq('id', id); if (error) notify("Lỗi ràng buộc!", "error"); else fetchData(); } }
+                function openProfileModal() { showProfile.value = true; isEditingContact.value = false; isEditingPassword.value = false; refreshIcons(); }
+                async function handleLogout() { await supabaseClient.auth.signOut(); location.reload(); }
+                async function handleForgotPassword() { if (!email.value) return notify("Nhập Email trước", "error"); loading.value = true; const { error } = await supabaseClient.auth.resetPasswordForEmail(email.value); if (error) notify(error.message, "error"); else notify("Link reset đã gửi!"); loading.value = false; }
+                async function goToApp(url) {
+                    const { data: { session: cur } } = await supabaseClient.auth.getSession();
+                    if (cur) window.location.href = `https://${url}/#access_token=${cur.access_token}&refresh_token=${cur.refresh_token}`;
+                    else notify("Hết hạn phiên làm việc", "error");
+                }
+                async function handleAvatarUpload(event) {
+                    const file = event.target.files[0]; if (!file || file.size > 10 * 1024 * 1024) return notify("Quá 10MB", "error");
+                    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz_l3HumTWalRPNcpo6ZRwBMk9Cv0hAD41F3bwDDBGburS3f8eIy5_Bacb4v7fFuQ/exec";
+                    uploading.value = true; const reader = new FileReader();
+                    reader.onload = async function () {
+                        const base64 = reader.result.split(',')[1];
+                        try {
+                            const res = await fetch(GOOGLE_SCRIPT_URL, { method: "POST", body: JSON.stringify({ base64, mimeType: file.type, fileName: `avatar_${profile.value.employee_code}_${Date.now()}.jpg` })});
+                            const result = await res.json();
+                            if (result.status === "success") { await supabaseClient.from('profiles').update({ avatar_url: result.url }).eq('id', session.value.user.id); profile.value.avatar_url = result.url; notify("✅ Đã cập nhật ảnh!"); }
+                            else throw new Error(result.message);
+                        } catch (err) { notify("Lỗi: " + err.message, "error"); }
+                        finally { uploading.value = false; refreshIcons(); }
+                    };
+                    reader.readAsDataURL(file);
+                }
 
-                const handleLogout = async () => { await supabaseClient.auth.signOut(); window.location.href = 'index.html'; };
-                const refreshIcons = () => nextTick(() => { if (window.lucide) lucide.createIcons(); });
-                watch([activeTab, showUserModal, showDeptModal], () => refreshIcons());
+                watch([showPassword, showProfile, session, authMode, signupStep, isEditingPassword, isEditingContact], () => refreshIcons());
 
-                return { activeTab, users, departments, searchQuery, filterDept, currentUserId, showUserModal, showDeptModal, userForm, deptForm, saving, roleList, appOptions, filteredUsers, getInitial, getUserName, getDeptName, openUserModal, saveUser, openDeptModal, saveDept, deleteDept, handleHardDelete, handleLogout }
+                return { authMode, signupStep, email, password, confirmPassword, otpToken, loading, uploading, session, profile, apps, showProfile, showPassword, userInitial, isAdmin, isEditingContact, editProfileForm, savingProfile, isEditingPassword, newPassword, confirmNewPassword, changingPassword, handleSubmit, handleLogout, goToApp, handleAvatarUpload, handleForgotPassword, saveProfileContact, handleChangePassword, openProfileModal }
             }
         }).mount('#app');
     </script>
