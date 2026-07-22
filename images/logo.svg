@@ -1,7 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
-  <!-- Hình tròn nền màu xanh lá -->
-  <circle cx="50" cy="50" r="45" fill="#4CAF50" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="120" height="120">
+  <!-- Khung màn hình chính / Trình duyệt -->
+  <rect x="10" y="20" width="80" height="60" rx="6" fill="#1E3A8A" />
   
-  <!-- Hình vuông màu trắng, bo góc 5px ở chính giữa -->
-  <rect x="30" y="30" width="40" height="40" fill="#FFFFFF" rx="5" />
+  <!-- Thanh Sidebar (Menu điều hướng các app) -->
+  <rect x="10" y="20" width="25" height="60" rx="6" fill="#F97316" />
+  
+  <!-- Các icon giả lập trên Sidebar -->
+  <rect x="15" y="30" width="15" height="4" rx="2" fill="#FFFFFF" opacity="0.8"/>
+  <rect x="15" y="40" width="10" height="4" rx="2" fill="#FFFFFF" opacity="0.8"/>
+  <rect x="15" y="50" width="12" height="4" rx="2" fill="#FFFFFF" opacity="0.8"/>
+  
+  <!-- Nội dung Dashboard giả lập bên phải -->
+  <rect x="42" y="30" width="40" height="20" rx="3" fill="#FFFFFF" opacity="0.2"/>
+  <circle cx="50" cy="65" r="8" fill="#FFFFFF" opacity="0.2" />
+  <rect x="65" y="60" width="17" height="10" rx="2" fill="#FFFFFF" opacity="0.2"/>
 </svg>
