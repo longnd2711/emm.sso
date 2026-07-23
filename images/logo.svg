@@ -1,17 +1,32 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="120" height="120">
-  <!-- Khung màn hình chính / Trình duyệt -->
-  <rect x="10" y="20" width="80" height="60" rx="6" fill="#1E3A8A" />
+
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff8c42" />
+      <stop offset="100%" stop-color="#ff5e00" />
+    </linearGradient>
+    <linearGradient id="glareGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.3)" />
+      <stop offset="100%" stop-color="rgba(255,255,255,0)" />
+    </linearGradient>
+  </defs>
+
+  <!-- Nền icon bo góc (Squircle) -->
+  <rect x="0" y="0" width="120" height="120" rx="28" fill="url(#bgGradient)" />
   
-  <!-- Thanh Sidebar (Menu điều hướng các app) -->
-  <rect x="10" y="20" width="25" height="60" rx="6" fill="#F97316" />
-  
-  <!-- Các icon giả lập trên Sidebar -->
-  <rect x="15" y="30" width="15" height="4" rx="2" fill="#FFFFFF" opacity="0.8"/>
-  <rect x="15" y="40" width="10" height="4" rx="2" fill="#FFFFFF" opacity="0.8"/>
-  <rect x="15" y="50" width="12" height="4" rx="2" fill="#FFFFFF" opacity="0.8"/>
-  
-  <!-- Nội dung Dashboard giả lập bên phải -->
-  <rect x="42" y="30" width="40" height="20" rx="3" fill="#FFFFFF" opacity="0.2"/>
-  <circle cx="50" cy="65" r="8" fill="#FFFFFF" opacity="0.2" />
-  <rect x="65" y="60" width="17" height="10" rx="2" fill="#FFFFFF" opacity="0.2"/>
+  <!-- Hiệu ứng ánh sáng góc trên (tùy chọn để trông bóng bẩy hơn) -->
+  <path d="M0 28 C0 12.5 12.5 0 28 0 L92 0 C107.5 0 120 12.5 120 28 L120 60 C120 60 60 60 0 60 Z" fill="url(#glareGradient)" />
+
+  <!-- Biểu tượng chính: Khối hệ thống mạng lưới (Network System) -->
+  <g transform="translate(28, 28) scale(2.6)" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+    <circle cx="12" cy="12" r="1.2" fill="white" stroke="none" />
+    <circle cx="12" cy="2" r="1.2" fill="white" stroke="none" />
+    <circle cx="2" cy="7" r="1.2" fill="white" stroke="none" />
+    <circle cx="22" cy="7" r="1.2" fill="white" stroke="none" />
+    <circle cx="2" cy="17" r="1.2" fill="white" stroke="none" />
+    <circle cx="22" cy="17" r="1.2" fill="white" stroke="none" />
+    <circle cx="12" cy="22" r="1.2" fill="white" stroke="none" />
+  </g>
 </svg>
+        

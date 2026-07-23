@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tài liệu Thiết kế Icon | HEM EMM</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #020617; /* slate-950 */
+            color: #f1f5f9; /* slate-100 */
+            margin: 0;
+            overflow: hidden; /* Prevent scrolling */
+        }
+        
+        .slide {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            height: 100vh;
+            width: 100vw;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        
+        .slide.active {
+            display: flex;
+            opacity: 1;
+            z-index: 10;
+        }
+
+        .slide-content {
+            animation: slideUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+            transform: translateY(30px);
+            width: 100%;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* Gradient Text */
+        .text-gradient {
+            background: linear-gradient(to right, #ffffff, #94a3b8, #f97316);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .text-gradient-blue {
+            background: linear-gradient(to right, #60a5fa, #3b82f6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        /* Decorative Grid Background */
+        .bg-grid {
+            background-image: radial-gradient(#1e293b 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+        
+        /* Custom Scrollbar for tables if needed */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        
+        .icon-showcase {
+            filter: drop-shadow(0 20px 30px rgba(0,0,0,0.5));
+        }
+    </style>
+</head>
+<body class="selection:bg-orange-500/30 selection:text-orange-200">
+
+    <!-- Global Background Elements -->
+    <div class="fixed inset-0 z-0 bg-grid opacity-20 pointer-events-none"></div>
+    <div class="fixed top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-orange-900/10 blur-[120px] pointer-events-none z-0"></div>
+    <div class="fixed bottom-[-20%] right-[-10%] w-[40%] h-[40%] rounded-full bg-blue-900/20 blur-[120px] pointer-events-none z-0"></div>
+
+    <!-- Global Header -->
+    <div class="fixed top-0 right-0 p-6 z-50 pointer-events-none flex items-center gap-3">
+        <div class="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></div>
+        <p class="text-xs font-bold text-slate-500 tracking-widest uppercase">HEM EMM | UI/UX DESIGN SYSTEM</p>
+    </div>
+
+    <!-- Global Footer (Page Number) -->
+    <div class="fixed bottom-0 left-0 p-6 z-50 pointer-events-none w-full flex justify-between items-center">
+        <p class="text-xs font-medium text-slate-500">Tài liệu Thiết kế: Hệ thống Custom Icons (Vector)</p>
+        <div class="flex items-center gap-4">
+            <div class="flex gap-1">
+                <!-- Dots injected via JS -->
+                <div id="dot-container" class="flex gap-2 mr-4 pointer-events-auto"></div>
+            </div>
+            <p id="pageNumber" class="text-sm font-mono font-semibold text-orange-500/70 bg-orange-500/10 px-3 py-1 rounded-full border border-orange-500/20">01 / 08</p>
+        </div>
+    </div>
+
+    <!-- Navigation Controls -->
+    <button onclick="prevSlide()" class="fixed left-6 top-1/2 -translate-y-1/2 p-4 text-slate-600 hover:text-orange-400 transition-all z-50 bg-slate-900/50 border border-slate-800 rounded-full hover:bg-slate-800 hover:scale-110 shadow-lg backdrop-blur-sm group">
+        <i class="fas fa-chevron-left text-xl group-hover:-translate-x-1 transition-transform"></i>
+    </button>
+    <button onclick="nextSlide()" class="fixed right-6 top-1/2 -translate-y-1/2 p-4 text-slate-600 hover:text-orange-400 transition-all z-50 bg-slate-900/50 border border-slate-800 rounded-full hover:bg-slate-800 hover:scale-110 shadow-lg backdrop-blur-sm group">
+        <i class="fas fa-chevron-right text-xl group-hover:translate-x-1 transition-transform"></i>
+    </button>
+
+    <!-- Slide Container -->
+    <div id="slides-container" class="relative w-full h-full z-10">
+
+        <!-- ================= SLIDE 1: BÌA ================= -->
+        <div class="slide active flex-col justify-center items-center px-20">
+            <div class="slide-content text-center max-w-4xl mx-auto flex flex-col items-center">
+                <!-- Decorative Icon Group -->
+                <div class="flex items-center justify-center gap-4 mb-8">
+                    <div class="w-12 h-12 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400"><i class="fa-regular fa-calendar-check text-xl"></i></div>
+                    <div class="w-16 h-16 rounded-2xl bg-orange-500 shadow-[0_0_30px_rgba(249,115,22,0.4)] flex items-center justify-center text-white border border-orange-400"><i class="fa-solid fa-shapes text-3xl"></i></div>
+                    <div class="w-12 h-12 rounded-xl bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400"><i class="fa-solid fa-qrcode text-xl"></i></div>
+                </div>
+
+                <div class="inline-block px-4 py-1.5 rounded-full bg-slate-800/80 border border-slate-700 text-orange-400 text-xs font-bold uppercase tracking-widest mb-6 backdrop-blur-sm">
+                    Tài Liệu UI/UX
+                </div>
+                <h1 class="text-5xl md:text-7xl font-extrabold text-white mb-6 leading-tight tracking-tight">
+                    Hệ thống Icon <span class="text-gradient">Custom</span>
+                </h1>
+                <div class="w-24 h-1.5 bg-gradient-to-r from-orange-500 to-amber-500 mx-auto rounded-full mb-8"></div>
+                <p class="text-lg md:text-xl text-slate-400 leading-relaxed font-light max-w-3xl">
+                    Chi tiết bản thiết kế bộ biểu tượng (Vector SVG) dành riêng cho hệ thống phần mềm nội bộ HEM EMM.
+                </p>
+                <button onclick="nextSlide()" class="mt-12 group flex items-center gap-3 px-6 py-3 bg-orange-500 hover:bg-orange-400 text-white font-bold rounded-full transition-all shadow-[0_0_20px_rgba(249,115,22,0.3)]">
+                    Bắt đầu xem chi tiết
+                    <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- ================= SLIDE 2: APP ICON CHÍNH ================= -->
+        <div class="slide flex-col justify-center px-16 md:px-32">
+            <div class="slide-content max-w-6xl w-full mx-auto">
+                <div class="flex items-center gap-4 mb-12">
+                    <div class="w-12 h-12 rounded-lg bg-orange-500/10 border border-orange-500/30 flex items-center justify-center text-orange-400 text-xl">
+                        <!-- Đã thay thế icon fontawesome bằng chính mã SVG bên dưới thu nhỏ -->
+                        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                            <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" />
+                            <circle cx="12" cy="2" r="1.5" fill="currentColor" stroke="none" />
+                            <circle cx="2" cy="7" r="1.5" fill="currentColor" stroke="none" />
+                            <circle cx="22" cy="7" r="1.5" fill="currentColor" stroke="none" />
+                            <circle cx="2" cy="17" r="1.5" fill="currentColor" stroke="none" />
+                            <circle cx="22" cy="17" r="1.5" fill="currentColor" stroke="none" />
+                            <circle cx="12" cy="22" r="1.5" fill="currentColor" stroke="none" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-3xl font-bold text-white tracking-wide">Trang đăng nhập chung</h2>
+                        <p class="text-slate-500 text-sm mt-1">Biểu tượng đại diện chung cho Hệ thống</p>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+                    <div class="space-y-6 text-lg text-slate-300 leading-relaxed">
+                        <p>
+                            Sử dụng biểu tượng hiện đại mang tính chất <strong class="text-orange-400">Hệ thống & Kết nối (Hub/Network)</strong>.
+                        </p>
+                        
+                        <div class="mt-8 space-y-4">
+                            <div class="bg-slate-900/60 border border-slate-800 p-4 rounded-xl flex gap-4">
+                                <div class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-orange-400 shrink-0"><i class="fa-solid fa-draw-polygon"></i></div>
+                                <div>
+                                    <h4 class="text-white font-bold text-sm mb-1">Cấu trúc Lục giác (Hexagon)</h4>
+                                    <p class="text-slate-400 text-sm leading-relaxed">Đại diện cho các Module phần mềm được lắp ghép hoàn hảo và vững chắc.</p>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-slate-900/60 border border-slate-800 p-4 rounded-xl flex gap-4">
+                                <div class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-amber-400 shrink-0"><i class="fa-solid fa-circle-nodes"></i></div>
+                                <div>
+                                    <h4 class="text-white font-bold text-sm mb-1">Các điểm Node (Điểm kết nối)</h4>
+                                    <p class="text-slate-400 text-sm leading-relaxed">Các điểm chấm tròn đại diện cho sự liên kết giữa các phòng ban, thiết bị và con người trong hệ thống.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="relative h-[400px] rounded-3xl border border-slate-800 bg-slate-900 flex items-center justify-center p-8 overflow-hidden">
+                        <div class="absolute inset-0 bg-gradient-to-tr from-orange-500/5 to-transparent"></div>
+                        
+                        <!-- Hiển thị Icon có thêm tính năng Copy -->
+                        <div class="w-48 h-48 rounded-[32px] bg-gradient-to-br from-[#ff8c42] to-[#ff5e00] shadow-[0_20px_40px_rgba(255,94,0,0.4)] flex items-center justify-center relative overflow-hidden icon-showcase transition-transform duration-500">
+                            <!-- Glare effect -->
+                            <div class="absolute top-0 left-0 right-0 h-1/2 bg-gradient-to-b from-white/30 to-transparent"></div>
+                            
+                            <!-- SVG -->
+                            <svg width="96" height="96" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="relative z-10">
+                                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                                <circle cx="12" cy="12" r="1.5" fill="white" stroke="none" />
+                                <circle cx="12" cy="2" r="1.5" fill="white" stroke="none" />
+                                <circle cx="2" cy="7" r="1.5" fill="white" stroke="none" />
+                                <circle cx="22" cy="7" r="1.5" fill="white" stroke="none" />
+                                <circle cx="2" cy="17" r="1.5" fill="white" stroke="none" />
+                                <circle cx="22" cy="17" r="1.5" fill="white" stroke="none" />
+                                <circle cx="12" cy="22" r="1.5" fill="white" stroke="none" />
+                            </svg>
+
+                            <!-- Hover Overlay for Copy -->
+                            <div class="absolute inset-0 bg-slate-900/60 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity backdrop-blur-[2px] z-30 cursor-pointer" onclick="copySvg(this)">
+                                <span class="copy-text text-white font-bold text-sm tracking-wider flex items-center gap-2">
+                                    <i class="fa-regular fa-copy"></i> Copy Code
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= SLIDE 3: APP 1 - LỊCH HỌP ================= -->
+        <div class="slide flex-col justify-center px-16 md:px-32">
+            <div class="slide-content max-w-6xl w-full mx-auto">
+                <div class="flex items-center justify-between mb-12">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-lg bg-blue-600 border border-blue-500 flex items-center justify-center text-white text-xl shadow-[0_0_15px_rgba(37,99,235,0.4)]">
+                            <!-- Đã thay thế bằng custom SVG -->
+                            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                                <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01" stroke-width="1.5"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="text-3xl font-bold text-white tracking-wide">Phân hệ: Lịch họp</h2>
+                            <p class="text-blue-400 text-sm mt-1">Phòng họp & Công tác</p>
+                        </div>
+                    </div>
+                    <!-- Đã xoá box hiển thị viewBox để đồng bộ -->
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                    <!-- Showcase Box -->
+                    <div class="relative bg-slate-900 rounded-3xl border border-slate-800 p-12 flex flex-col items-center justify-center shadow-2xl h-[400px]">
+                        <div class="absolute inset-0 bg-blue-500/5 rounded-3xl pointer-events-none"></div>
+                        
+                        <div class="w-32 h-32 rounded-3xl bg-blue-600 flex items-center justify-center shadow-2xl shadow-blue-600/30 icon-showcase hover:-translate-y-2 transition-transform duration-300 border border-white/10 relative overflow-hidden">
+                            <!-- Custom SVG -->
+                            <svg class="text-white w-16 h-16 relative z-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                                <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01" stroke-width="1.5"></path>
+                            </svg>
+                            <!-- Hover Overlay for Copy -->
+                            <div class="absolute inset-0 bg-slate-900/60 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity backdrop-blur-[2px] z-30 cursor-pointer" onclick="copySvg(this)">
+                                <span class="copy-text text-white font-bold text-sm tracking-wider flex items-center gap-2">
+                                    <i class="fa-regular fa-copy"></i> Copy Code
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-6">
+                        <h3 class="text-xl font-bold text-white border-b border-slate-800 pb-2">Đặc tả thiết kế (Design Specs)</h3>
+                        <ul class="space-y-4 text-slate-300">
+                            <li class="flex items-start gap-3">
+                                <i class="fa-solid fa-pen-nib text-blue-500 mt-1"></i>
+                                <div>
+                                    <strong class="block text-white">Nét vẽ (Stroke)</strong>
+                                    <span class="text-sm text-slate-400">Sử dụng độ dày nét vừa phải, đầu nét bo tròn tạo cảm giác thân thiện, mềm mại tương đồng với UI bo góc của hệ thống.</span>
+                                </div>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <i class="fa-solid fa-layer-group text-blue-500 mt-1"></i>
+                                <div>
+                                    <strong class="block text-white">Chi tiết Đồ họa</strong>
+                                    <span class="text-sm text-slate-400">Hình ảnh cuốn lịch để bàn với 2 gáy lò xo. Các điểm chấm (dots) ở nửa dưới đại diện cho các sự kiện/cuộc họp đã được đánh dấu kín lịch.</span>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= SLIDE 4: APP 2 - TÀI SẢN ================= -->
+        <div class="slide flex-col justify-center px-16 md:px-32">
+            <div class="slide-content max-w-6xl w-full mx-auto">
+                <div class="flex items-center justify-between mb-12">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-lg bg-purple-600 border border-purple-500 flex items-center justify-center text-white text-xl shadow-[0_0_15px_rgba(147,51,234,0.4)]">
+                            <!-- Đã thay thế bằng custom SVG (Có hình khối và Kính lúp) -->
+                            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                                <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                                <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                                <circle cx="16" cy="16" r="4.5" fill="currentColor" fill-opacity="0.2" stroke="currentColor"></circle>
+                                <line x1="22" y1="22" x2="19.18" y2="19.18"></line>
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="text-3xl font-bold text-white tracking-wide">Phân hệ: Tài sản</h2>
+                            <p class="text-purple-400 text-sm mt-1">Cấp phát & Bàn giao</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                    <div class="space-y-6">
+                        <h3 class="text-xl font-bold text-white border-b border-slate-800 pb-2">Ý tưởng & Cấu trúc</h3>
+                        <ul class="space-y-4 text-slate-300">
+                            <li class="flex items-start gap-3">
+                                <i class="fa-solid fa-cube text-purple-500 mt-1"></i>
+                                <div>
+                                    <strong class="block text-white">Hình khối không gian (Isometric Box)</strong>
+                                    <span class="text-sm text-slate-400">Biểu thị cho vật tư, trang thiết bị, tài sản hữu hình đang được quản lý trong kho hoặc đã bàn giao.</span>
+                                </div>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <i class="fa-solid fa-magnifying-glass text-purple-500 mt-1"></i>
+                                <div>
+                                    <strong class="block text-white">Chi tiết Kính lúp (Magnifier)</strong>
+                                    <span class="text-sm text-slate-400">Tượng trưng cho sự "soi chiếu", kiểm kê và truy vấn vòng đời của từng tài sản một cách kỹ lưỡng.</span>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Showcase Box -->
+                    <div class="relative bg-slate-900 rounded-3xl border border-slate-800 p-12 flex flex-col items-center justify-center shadow-2xl h-[400px]">
+                        <div class="absolute inset-0 bg-purple-500/5 rounded-3xl pointer-events-none"></div>
+                        
+                        <div class="w-32 h-32 rounded-3xl bg-purple-600 flex items-center justify-center shadow-2xl shadow-purple-600/30 icon-showcase hover:-translate-y-2 transition-transform duration-300 border border-white/10 relative overflow-hidden">
+                            <!-- Custom SVG (Cập nhật thêm kính lúp che một góc hộp) -->
+                            <svg class="text-white w-16 h-16 relative z-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                                <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                                <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                                <!-- Phần kính lúp, sử dụng mã màu nền (#9333ea tương đương bg-purple-600) để lấp các đường kẻ phía sau tạo khối thật -->
+                                <circle cx="16.5" cy="16.5" r="4.5" fill="#9333ea" stroke="currentColor"></circle>
+                                <line x1="22.5" y1="22.5" x2="19.68" y2="19.68"></line>
+                            </svg>
+                            <!-- Hover Overlay for Copy -->
+                            <div class="absolute inset-0 bg-slate-900/60 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity backdrop-blur-[2px] z-30 cursor-pointer" onclick="copySvg(this)">
+                                <span class="copy-text text-white font-bold text-sm tracking-wider flex items-center gap-2">
+                                    <i class="fa-regular fa-copy"></i> Copy Code
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= SLIDE 5: APP 3 - CHẤM CÔNG ================= -->
+        <div class="slide flex-col justify-center px-16 md:px-32">
+            <div class="slide-content max-w-6xl w-full mx-auto">
+                <div class="flex items-center justify-between mb-12">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-lg bg-emerald-600 border border-emerald-500 flex items-center justify-center text-white text-xl shadow-[0_0_15px_rgba(5,150,105,0.4)]">
+                            <!-- Đã thay thế bằng custom SVG -->
+                            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <polyline points="16 11 18 13 22 9"></polyline>
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="text-3xl font-bold text-white tracking-wide">Phân hệ: Chấm công</h2>
+                            <p class="text-emerald-400 text-sm mt-1">GPS & Chống gian lận</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                    <!-- Showcase Box -->
+                    <div class="relative bg-slate-900 rounded-3xl border border-slate-800 p-12 flex flex-col items-center justify-center shadow-2xl h-[400px]">
+                        <div class="absolute inset-0 bg-emerald-500/5 rounded-3xl pointer-events-none"></div>
+                        
+                        <div class="w-32 h-32 rounded-3xl bg-emerald-600 flex items-center justify-center shadow-2xl shadow-emerald-600/30 icon-showcase hover:-translate-y-2 transition-transform duration-300 border border-white/10 relative overflow-hidden">
+                            <!-- Custom SVG -->
+                            <svg class="text-white w-16 h-16 relative z-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <polyline points="16 11 18 13 22 9"></polyline>
+                            </svg>
+                            <!-- Hover Overlay for Copy -->
+                            <div class="absolute inset-0 bg-slate-900/60 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity backdrop-blur-[2px] z-30 cursor-pointer" onclick="copySvg(this)">
+                                <span class="copy-text text-white font-bold text-sm tracking-wider flex items-center gap-2">
+                                    <i class="fa-regular fa-copy"></i> Copy Code
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-6">
+                        <h3 class="text-xl font-bold text-white border-b border-slate-800 pb-2">Định danh Nhân sự</h3>
+                        <ul class="space-y-4 text-slate-300">
+                            <li class="flex items-start gap-3">
+                                <i class="fa-solid fa-user text-emerald-500 mt-1"></i>
+                                <div>
+                                    <strong class="block text-white">Chủ thể Nhân sự</strong>
+                                    <span class="text-sm text-slate-400">Hình ảnh người bán thân cách điệu nằm bên trái, thể hiện đây là ứng dụng liên quan trực tiếp đến nhân viên.</span>
+                                </div>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <i class="fa-solid fa-check-double text-emerald-500 mt-1"></i>
+                                <div>
+                                    <strong class="block text-white">Dấu Check (Xác thực)</strong>
+                                    <span class="text-sm text-slate-400">Dấu check lớn đặt cạnh nhân viên biểu thị sự "Hoàn thành", "Có mặt", hoặc "Đã xác thực thành công qua GPS". Tối giản nhưng truyền tải đúng nghiệp vụ.</span>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= SLIDE 6: APP 4 - TRA CỨU (QR) ================= -->
+        <div class="slide flex-col justify-center px-16 md:px-32">
+            <div class="slide-content max-w-6xl w-full mx-auto">
+                <div class="flex items-center justify-between mb-12">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-lg bg-amber-600 border border-amber-500 flex items-center justify-center text-white text-xl shadow-[0_0_15px_rgba(217,119,6,0.4)]">
+                            <!-- Đã thay thế bằng custom SVG -->
+                            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M8 3H5a2 2 0 0 0-2 2v3"></path>
+                                <path d="M21 8V5a2 2 0 0 0-2-2h-3"></path>
+                                <path d="M3 16v3a2 2 0 0 0 2 2h3"></path>
+                                <path d="M16 21h3a2 2 0 0 0 2-2v-3"></path>
+                                <rect x="7" y="7" width="4" height="4" rx="1"></rect>
+                                <rect x="13" y="7" width="4" height="4" rx="1"></rect>
+                                <rect x="7" y="13" width="4" height="4" rx="1"></rect>
+                                <rect x="13" y="13" width="2" height="2"></rect>
+                                <rect x="15" y="15" width="2" height="2"></rect>
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="text-3xl font-bold text-white tracking-wide">Phân hệ: Tra cứu thông tin</h2>
+                            <p class="text-amber-400 text-sm mt-1">Thông tin sản phẩm qua mã QR</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                    <div class="space-y-6">
+                        <h3 class="text-xl font-bold text-white border-b border-slate-800 pb-2">Thay đổi thiết kế cốt lõi</h3>
+                        <!-- Đã xóa đoạn văn bản theo yêu cầu -->
+                        <ul class="space-y-4 text-slate-300">
+                            <li class="flex items-start gap-3">
+                                <i class="fa-solid fa-expand text-amber-500 mt-1"></i>
+                                <div>
+                                    <strong class="block text-white">Khung quét thông minh (Scanner Frame)</strong>
+                                    <span class="text-sm text-slate-400">4 góc vuông cách điệu bao quanh, gợi nhớ đến giao diện camera khi mở chức năng quét mã QR.</span>
+                                </div>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <i class="fa-solid fa-braille text-amber-500 mt-1"></i>
+                                <div>
+                                    <strong class="block text-white">Mã hóa (QR Matrix)</strong>
+                                    <span class="text-sm text-slate-400">Các khối vuông nhỏ bên trong được sắp xếp phi đối xứng, đại diện cho dữ liệu mã hóa chuẩn công nghiệp.</span>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Showcase Box -->
+                    <div class="relative bg-slate-900 rounded-3xl border border-slate-800 p-12 flex flex-col items-center justify-center shadow-2xl h-[400px]">
+                        <div class="absolute inset-0 bg-amber-500/5 rounded-3xl pointer-events-none"></div>
+                        
+                        <div class="w-32 h-32 rounded-3xl bg-amber-600 flex items-center justify-center shadow-2xl shadow-amber-600/30 icon-showcase hover:-translate-y-2 transition-transform duration-300 border border-white/10 relative overflow-hidden">
+                            <!-- Custom SVG -->
+                            <svg class="text-white w-16 h-16 relative z-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M8 3H5a2 2 0 0 0-2 2v3"></path>
+                                <path d="M21 8V5a2 2 0 0 0-2-2h-3"></path>
+                                <path d="M3 16v3a2 2 0 0 0 2 2h3"></path>
+                                <path d="M16 21h3a2 2 0 0 0 2-2v-3"></path>
+                                <rect x="7" y="7" width="4" height="4" rx="1"></rect>
+                                <rect x="13" y="7" width="4" height="4" rx="1"></rect>
+                                <rect x="7" y="13" width="4" height="4" rx="1"></rect>
+                                <rect x="13" y="13" width="2" height="2"></rect>
+                                <rect x="15" y="15" width="2" height="2"></rect>
+                            </svg>
+                            <!-- Hover Overlay for Copy -->
+                            <div class="absolute inset-0 bg-slate-900/60 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity backdrop-blur-[2px] z-30 cursor-pointer" onclick="copySvg(this)">
+                                <span class="copy-text text-white font-bold text-sm tracking-wider flex items-center gap-2">
+                                    <i class="fa-regular fa-copy"></i> Copy Code
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= SLIDE 7: APP 5 - TÀI LIỆU ================= -->
+        <div class="slide flex-col justify-center px-16 md:px-32">
+            <div class="slide-content max-w-6xl w-full mx-auto">
+                <div class="flex items-center justify-between mb-12">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-lg bg-indigo-600 border border-indigo-500 flex items-center justify-center text-white text-xl shadow-[0_0_15px_rgba(79,70,229,0.4)]">
+                            <!-- Đã thay thế bằng custom SVG -->
+                            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="text-3xl font-bold text-white tracking-wide">Phân hệ: Tài liệu</h2>
+                            <p class="text-indigo-400 text-sm mt-1">Văn bản & Thông báo nội bộ</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                    <!-- Showcase Box -->
+                    <div class="relative bg-slate-900 rounded-3xl border border-slate-800 p-12 flex flex-col items-center justify-center shadow-2xl h-[400px]">
+                        <div class="absolute inset-0 bg-indigo-500/5 rounded-3xl pointer-events-none"></div>
+                        
+                        <div class="w-32 h-32 rounded-3xl bg-indigo-600 flex items-center justify-center shadow-2xl shadow-indigo-600/30 icon-showcase hover:-translate-y-2 transition-transform duration-300 border border-white/10 relative overflow-hidden">
+                            <!-- Custom SVG -->
+                            <svg class="text-white w-16 h-16 relative z-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
+                            <!-- Hover Overlay for Copy -->
+                            <div class="absolute inset-0 bg-slate-900/60 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity backdrop-blur-[2px] z-30 cursor-pointer" onclick="copySvg(this)">
+                                <span class="copy-text text-white font-bold text-sm tracking-wider flex items-center gap-2">
+                                    <i class="fa-regular fa-copy"></i> Copy Code
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-6">
+                        <h3 class="text-xl font-bold text-white border-b border-slate-800 pb-2">Cấu trúc chuẩn hóa</h3>
+                        <ul class="space-y-4 text-slate-300">
+                            <li class="flex items-start gap-3">
+                                <i class="fa-solid fa-file-contract text-indigo-500 mt-1"></i>
+                                <div>
+                                    <strong class="block text-white">Văn bản gấp góc (Folded Paper)</strong>
+                                    <span class="text-sm text-slate-400">Hình tượng phổ quát nhất dành cho dữ liệu, tài liệu, biểu mẫu. Góc gấp phía trên bên phải tạo chiều sâu cho bề mặt phẳng.</span>
+                                </div>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <i class="fa-solid fa-align-left text-indigo-500 mt-1"></i>
+                                <div>
+                                    <strong class="block text-white">Dòng nội dung (Text lines)</strong>
+                                    <span class="text-sm text-slate-400">Các đường kẻ ngang giả lập nội dung văn bản. Một điểm nhấn nhỏ dạng chấm/mũi tên đầu dòng tạo ra sự phân cấp thông tin rõ ràng.</span>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= SLIDE 8: OUTRO ================= -->
+        <div class="slide flex-col justify-center items-center px-20">
+            <div class="slide-content text-center max-w-3xl mx-auto border border-slate-800 bg-slate-900/50 p-12 rounded-3xl backdrop-blur-sm relative overflow-hidden">
+                <!-- Decorative effects -->
+                <div class="absolute -top-1/2 -left-1/2 w-full h-full bg-gradient-to-br from-orange-500/10 to-transparent rotate-12 blur-2xl pointer-events-none"></div>
+                
+                <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-slate-800 border border-slate-700 text-3xl text-white mb-6 relative z-10 shadow-lg">
+                    <i class="fa-solid fa-check-double text-orange-400"></i>
+                </div>
+                
+                <h1 class="text-4xl md:text-5xl font-extrabold text-white mb-6 tracking-tight relative z-10">Mã nguồn hoàn chỉnh</h1>
+                
+                <div class="w-16 h-1 bg-orange-500 mx-auto rounded-full mb-6 relative z-10"></div>
+                
+                <p class="text-lg text-slate-400 leading-relaxed relative z-10">
+                    Toàn bộ mã nguồn SVG đã được tích hợp vào trong file, có thể copy bằng cách click vào hình ảnh tương ứng, sẵn sàn cho sử dụng.
+                </p>
+                
+                <div class="mt-10 pt-8 border-t border-slate-800/80 relative z-10 flex justify-center gap-4">
+                    <button onclick="scrollToSlide(0)" class="text-sm px-6 py-2.5 rounded-full border border-slate-700 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">
+                        <i class="fa-solid fa-rotate-left mr-2"></i>Xem lại từ đầu
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const pageNumber = document.getElementById('pageNumber');
+        const dotContainer = document.getElementById('dot-container');
+        const totalSlides = slides.length;
+
+        // Initialize dots
+        for(let i=0; i<totalSlides; i++) {
+            const dot = document.createElement('button');
+            dot.className = `w-2 h-2 rounded-full transition-all duration-300 ${i === 0 ? 'bg-orange-500 w-4' : 'bg-slate-700 hover:bg-slate-500'}`;
+            dot.onclick = () => scrollToSlide(i);
+            dotContainer.appendChild(dot);
+        }
+        const dots = dotContainer.children;
+
+        function updateSlide() {
+            // Hide all slides
+            slides.forEach((slide, index) => {
+                slide.classList.remove('active');
+                
+                // reset animation hack
+                const content = slide.querySelector('.slide-content');
+                if(content) {
+                    content.style.animation = 'none';
+                    content.offsetHeight; /* trigger reflow */
+                    content.style.animation = null; 
+                }
+
+                // Update dots
+                if(dots[index]) {
+                    dots[index].className = `w-2 h-2 rounded-full transition-all duration-300 ${index === currentSlide ? 'bg-orange-500 w-4 shadow-[0_0_8px_rgba(249,115,22,0.5)]' : 'bg-slate-700 hover:bg-slate-500'}`;
+                }
+            });
+            
+            // Show current slide
+            slides[currentSlide].classList.add('active');
+            
+            // Update page number formatting (01 / 08)
+            const formattedCurrent = String(currentSlide + 1).padStart(2, '0');
+            const formattedTotal = String(totalSlides).padStart(2, '0');
+            pageNumber.innerText = `${formattedCurrent} / ${formattedTotal}`;
+        }
+
+        function scrollToSlide(index) {
+            if(index >= 0 && index < totalSlides) {
+                currentSlide = index;
+                updateSlide();
+            }
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides - 1) {
+                currentSlide++;
+                updateSlide();
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateSlide();
+            }
+        }
+
+        // Logic Copy Code SVG
+        function copySvg(element) {
+            const svgElement = element.parentElement.querySelector('svg');
+            if (!svgElement) return;
+            
+            const svgCode = svgElement.outerHTML;
+            
+            navigator.clipboard.writeText(svgCode).then(() => {
+                const span = element.querySelector('.copy-text');
+                const originalHTML = span.innerHTML;
+                
+                // Đổi UI báo copy thành công
+                span.innerHTML = '<i class="fa-solid fa-check text-emerald-400"></i> <span class="text-emerald-400">Copied!</span>';
+                element.classList.add('bg-slate-900/80'); // Làm nền tối đi 1 chút để phản hồi
+                
+                // Khôi phục sau 2 giây
+                setTimeout(() => {
+                    span.innerHTML = originalHTML;
+                    element.classList.remove('bg-slate-900/80');
+                }, 2000);
+            }).catch(err => {
+                console.error('Lỗi copy:', err);
+                alert("Vui lòng bôi đen và copy thủ công!");
+            });
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                prevSlide();
+            }
+        });
+
+        // Click to next (optional, clicking on background)
+        document.getElementById('slides-container').addEventListener('click', (e) => {
+            // Prevent triggering if clicking buttons, links, or selecting text
+            if(e.target.tagName !== 'BUTTON' && 
+               e.target.tagName !== 'I' && 
+               e.target.tagName !== 'A' &&
+               e.target.tagName !== 'svg' &&
+               e.target.tagName !== 'path' &&
+               e.target.tagName !== 'rect' &&
+               e.target.tagName !== 'circle' &&
+               e.target.tagName !== 'line' &&
+               e.target.tagName !== 'polyline' &&
+               !e.target.closest('button') &&
+               !e.target.closest('.icon-showcase') && // Không chuyển slide khi click vào vùng icon copy
+               window.getSelection().toString().length === 0) {
+                nextSlide();
+            }
+        });
+
+        // Wheel scrolling (with debounce to prevent rapid fire)
+        let isScrolling = false;
+        window.addEventListener('wheel', (e) => {
+            if (isScrolling) return;
+            isScrolling = true;
+            
+            if (e.deltaY > 0) {
+                nextSlide();
+            } else if (e.deltaY < 0) {
+                prevSlide();
+            }
+            
+            setTimeout(() => {
+                isScrolling = false;
+            }, 800); // 800ms debounce
+        });
+
+        // Initial setup
+        updateSlide();
+    </script>
+</body>
+</html>
