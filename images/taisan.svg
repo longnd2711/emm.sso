@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+    <!-- Khối nền bo góc (Squircle) -->
+    <rect width="128" height="128" rx="32" fill="#9333ea" />
+    
+    <!-- Icon trung tâm (Kích thước 64x64, căn giữa khung nền 128x128) -->
+    <svg x="32" y="32" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        
+                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                                <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                                <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                                <!-- Phần kính lúp, sử dụng mã màu nền (#9333ea tương đương bg-purple-600) để lấp các đường kẻ phía sau tạo khối thật -->
+                                <circle cx="16.5" cy="16.5" r="4.5" fill="#9333ea" stroke="#ffffff"></circle>
+                                <line x1="22.5" y1="22.5" x2="19.68" y2="19.68"></line>
+                            
+    </svg>
+</svg>

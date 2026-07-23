@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+    <defs>
+        <linearGradient id="appGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#ff8c42" />
+            <stop offset="100%" stop-color="#ff5e00" />
+        </linearGradient>
+        <linearGradient id="glareGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="white" stop-opacity="0.3" />
+            <stop offset="100%" stop-color="white" stop-opacity="0" />
+        </linearGradient>
+    </defs>
+    <!-- Khối nền bo góc (Squircle) -->
+    <rect width="128" height="128" rx="32" fill="url(#appGradient)" />
+    <path d="M0 32 C0 14.3 14.3 0 32 0 L96 0 C113.7 0 128 14.3 128 32 L128 64 L0 64 Z" fill="url(#glareGradient)" />
+    
+    <!-- Icon trung tâm (Kích thước 64x64, căn giữa khung nền 128x128) -->
+    <svg x="32" y="32" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        
+                                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+                                <circle cx="12" cy="12" r="1.5" fill="white" stroke="none"></circle>
+                                <circle cx="12" cy="2" r="1.5" fill="white" stroke="none"></circle>
+                                <circle cx="2" cy="7" r="1.5" fill="white" stroke="none"></circle>
+                                <circle cx="22" cy="7" r="1.5" fill="white" stroke="none"></circle>
+                                <circle cx="2" cy="17" r="1.5" fill="white" stroke="none"></circle>
+                                <circle cx="22" cy="17" r="1.5" fill="white" stroke="none"></circle>
+                                <circle cx="12" cy="22" r="1.5" fill="white" stroke="none"></circle>
+                            
+    </svg>
+</svg>
