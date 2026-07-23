@@ -1,0 +1,40 @@
+function doPost(e) {
+  try {
+    // 1. ID thư mục của bạn
+    var FOLDER_ID = "1eW0N4RO5d2PrE0uqcBWaFvH8OextrMw-"; 
+    
+    var data = JSON.parse(e.postData.contents);
+    var bytes = Utilities.base64Decode(data.base64);
+    var blob = Utilities.newBlob(bytes, data.mimeType, data.fileName);
+    
+    // 2. Thực hiện ghi file
+    var folder = DriveApp.getFolderById(FOLDER_ID);
+    var file = folder.createFile(blob);
+    var fileId = file.getId();
+
+    // 3. Cố gắng đặt quyền (nhưng nếu lỗi do chính sách công ty thì bỏ qua)
+    try {
+      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    } catch (sharingError) {
+      // Ghi log để bạn theo dõi nhưng không trả về lỗi cho Client
+      console.log("Không thể đặt quyền chia sẻ riêng lẻ (có thể do chính sách Workspace): " + sharingError);
+    }
+    
+    // 4. Trả về kết quả thành công vì file ĐÃ được tạo
+    var result = {
+      "status": "success",
+      "url": "https://lh3.googleusercontent.com/d/" + fileId,
+      "fileId": fileId
+    };
+    
+    return ContentService.createTextOutput(JSON.stringify(result))
+      .setMimeType(ContentService.MimeType.TEXT);
+    
+  } catch (err) {
+    // Chỉ trả về lỗi nếu ngay cả việc tạo file cũng thất bại
+    return ContentService.createTextOutput(JSON.stringify({
+      "status": "error",
+      "message": "Lỗi hệ thống Drive: " + err.toString()
+    })).setMimeType(ContentService.MimeType.TEXT);
+  }
+}

@@ -8,15 +8,13 @@
 
     <!-- Thêm Favicon bằng file SVG -->
     <link rel="icon" type="image/svg+xml" href="images/logo_sso.svg">
-    
+    <link rel="apple-touch-icon" href="images/logo_sso.svg">
+
     <!-- Liên kết file manifest -->
     <link rel="manifest" href="/manifest.json">
 
     <!-- Thiết lập màu thanh trạng thái (theme color) cho mobile -->
     <meta name="theme-color" content="#0f172a">
-
-    <!-- Dành riêng cho iOS/Safari (vì Safari hỗ trợ PWA hơi khác một chút) -->
-    <link rel="apple-touch-icon" href="/images/logo-sso.svg">
 
     <!-- Thư viện CDN (Giữ nguyên gốc) -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -114,7 +112,7 @@
         <div class="text-center mb-8">
             <div
                 class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-orange-500 mb-4 shadow-lg shadow-orange-500/30">
-                <i data-lucide="shield-check" class="w-8 h-8 text-white"></i>
+                <img src="images/logo_sso.svg" class="w-10 h-10 object-contain" alt="Logo">
             </div>
             <h1 class="text-2xl font-bold tracking-tight text-white">HEM <span class="text-orange-500">EMM</span></h1>
             <p class="text-[10px] text-blue-200/60 uppercase tracking-widest mt-1 font-medium">Hệ thống Ứng dụng Nội bộ
@@ -217,8 +215,8 @@
             <div class="space-y-2.5">
                 <div v-for="app in apps" :key="app.name" @click="goToApp(app.url)"
                     class="app-row p-3.5 rounded-2xl flex items-center space-x-4 cursor-pointer">
-                    <div :class="`w-10 h-10 rounded-xl flex items-center justify-center ${app.bgColor}`"><i
-                            :data-lucide="app.icon" class="w-5 h-5 text-white"></i></div>
+                    <div :class="`w-10 h-10 rounded-xl flex items-center justify-center ${app.bgColor}`"><img
+                            :src="'images/' + app.icon" class="w-6 h-6 object-contain" alt="icon"></div>
                     <div class="flex-1">
                         <p class="text-sm font-bold text-white">{{ app.name }}</p>
                         <p class="text-[10px] text-blue-200/50">{{ app.subtitle }}</p>
@@ -247,7 +245,7 @@
                     <!-- Avatar Section (Giữ nguyên Reader logic) -->
                     <div class="relative inline-block group" @click="!uploading && $refs.fileInput.click()">
                         <div
-                            class="w-20 h-24 rounded-3xl bg-orange-500 mx-auto flex items-center justify-center text-3xl font-bold border-4 border-white/10 overflow-hidden cursor-pointer shadow-2xl">
+                            class="w-40 h-48 rounded-3xl bg-orange-500 mx-auto flex items-center justify-center text-3xl font-bold border-4 border-white/10 overflow-hidden cursor-pointer shadow-2xl">
                             <img v-if="profile?.avatar_url" :src="profile.avatar_url"
                                 class="w-full h-full object-cover"><span v-else>{{ userInitial }}</span>
                         </div>
@@ -376,11 +374,11 @@
                 const changingPassword = ref(false);
 
                 const apps = [
-                    { name: 'Lịch họp', subtitle: 'Phòng họp & Công tác', icon: 'calendar-days', url: 'lichhop.hem.com.vn', bgColor: 'bg-blue-600' },
-                    { name: 'Tài sản', subtitle: 'Cấp phát & Bàn giao', icon: 'package-search', url: 'taisan.hem.com.vn', bgColor: 'bg-purple-600' },
-                    { name: 'Chấm công', subtitle: 'GPS & Chống gian lận', icon: 'user-check', url: 'chamcong.hem.com.vn', bgColor: 'bg-emerald-600' },
-                    { name: 'Tra cứu', subtitle: 'Thông tin kỹ thuật', icon: 'search', url: 'tracuu.hem.com.vn', bgColor: 'bg-amber-600' },
-                    { name: 'Tài liệu', subtitle: 'Văn bản & Thông báo nội bộ', icon: 'file-text', url: 'tailieu.hem.com.vn', bgColor: 'bg-indigo-600' }
+                    { name: 'Lịch họp', subtitle: 'Phòng họp & Công tác', icon: 'lichhop.svg', url: 'lichhop.hem.com.vn', bgColor: 'bg-blue-600' },
+                    { name: 'Tài sản', subtitle: 'Cấp phát & Bàn giao', icon: 'taisan.svg', url: 'taisan.hem.com.vn', bgColor: 'bg-purple-600' },
+                    { name: 'Chấm công', subtitle: 'GPS & Chống gian lận', icon: 'chamcong.svg', url: 'chamcong.hem.com.vn', bgColor: 'bg-emerald-600' },
+                    { name: 'Tra cứu', subtitle: 'Thông tin kỹ thuật', icon: 'tracuu.svg', url: 'tracuu.hem.com.vn', bgColor: 'bg-amber-600' },
+                    { name: 'Tài liệu', subtitle: 'Văn bản & Thông báo nội bộ', icon: 'tailieu.svg', url: 'tailieu.hem.com.vn', bgColor: 'bg-indigo-600' }
                 ];
 
                 const userInitial = computed(() => profile.value?.full_name?.trim().split(' ').pop().charAt(0).toUpperCase() || 'H');
@@ -389,8 +387,24 @@
                 onMounted(async () => { const { data } = await supabaseClient.auth.getSession(); session.value = data.session; if (session.value) fetchProfile(); refreshIcons(); });
                 function refreshIcons() { nextTick(() => { if (window.lucide) lucide.createIcons(); }); }
                 async function fetchProfile() {
-                    const { data } = await supabaseClient.from('profiles').select('*').eq('id', session.value.user.id).single();
-                    if (data) { profile.value = data; editProfileForm.value.personal_email = data.personal_email || ''; editProfileForm.value.phone_number = data.phone_number || ''; }
+                    // Truy vấn đầy đủ các cột
+                    const { data, error } = await supabaseClient
+                        .from('profiles')
+                        .select('id, employee_code, full_name, company_email, department_id, role, app_permissions, avatar_url, job_title, direct_manager_id, personal_email, phone_number')
+                        .eq('id', session.value.user.id)
+                        .single();
+
+                    if (error) {
+                        console.error("Lỗi lấy profile:", error);
+                        return;
+                    }
+
+                    if (data) {
+                        profile.value = data;
+                        // Gán dữ liệu vào form chỉnh sửa
+                        editProfileForm.value.personal_email = data.personal_email || '';
+                        editProfileForm.value.phone_number = data.phone_number || '';
+                    }
                     refreshIcons();
                 }
 
@@ -437,8 +451,34 @@
                 async function handleForgotPassword() { if (!email.value) return notify("Nhập Email trước", "error"); loading.value = true; const { error } = await supabaseClient.auth.resetPasswordForEmail(email.value); if (error) notify(error.message, "error"); else notify("Kiểm tra email để lấy Link khôi phục mật khẩu!"); loading.value = false; }
                 async function goToApp(url) {
                     const { data: { session: cur } } = await supabaseClient.auth.getSession();
-                    if (cur) window.location.href = `https://${url}/#access_token=${cur.access_token}&refresh_token=${cur.refresh_token}`;
-                    else notify("Hết hạn phiên làm việc", "error");
+
+                    if (cur && profile.value) {
+                        const p = profile.value;
+
+                        // Chuẩn bị các thông số cần truyền
+                        const ssoData = {
+                            access_token: cur.access_token,
+                            refresh_token: cur.refresh_token,
+                            id: p.id,
+                            employee_code: p.employee_code || '',
+                            full_name: p.full_name || '',
+                            company_email: p.company_email || '',
+                            department_id: p.department_id || '',
+                            role: p.role || '',
+                            direct_manager_id: p.direct_manager_id || '',
+                            // Với app_permissions (JSONB), ta stringify rồi encode để tránh lỗi URL
+                            app_permissions: JSON.stringify(p.app_permissions || {})
+                        };
+
+                        // Tạo chuỗi tham số
+                        const searchParams = new URLSearchParams(ssoData);
+
+                        // Điều hướng sang App con với đầy đủ thông tin ở phần Hash (#)
+                        // Việc để ở Hash giúp Token không bị gửi lên Server (bảo mật hơn Query String)
+                        window.location.href = `https://${url}/#${searchParams.toString()}`;
+                    } else {
+                        notify("Phiên làm việc đã hết hạn, vui lòng đăng nhập lại", "error");
+                    }
                 }
                 async function handleAvatarUpload(event) {
                     const file = event.target.files[0]; if (!file || file.size > 10 * 1024 * 1024) return notify("Quá 10MB", "error");
